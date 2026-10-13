@@ -28,6 +28,7 @@ app.use(
         'http://127.0.0.1:5000',
         'http://localhost:5000',
         'https://schedule-sai.vercel.app',
+        'https://schedule-backend-navy.vercel.app',
       ]
       if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
         return origin || '*'
