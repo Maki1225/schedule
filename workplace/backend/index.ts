@@ -6,6 +6,7 @@ import { cors } from 'hono/cors'
 import { Env } from './src/types/hono'
 import eventRoutes from './src/routes/eventRoutes'
 import authRoutes from './src/routes/authRoutes'
+import groupRoutes from './src/routes/groupRoutes'
 
 const app = new Hono<Env>()
 
@@ -55,6 +56,7 @@ app.onError((err, c) => {
 // 4. APIルートの登録
 app.route('/api/events', eventRoutes)
 app.route('/api/auth', authRoutes)
+app.route('/api/groups', groupRoutes)
 
 // 5. ローカル開発用サーバー起動
 if (process.env.NODE_ENV !== 'production') {
