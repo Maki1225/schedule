@@ -102,6 +102,47 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // =========================
+    // ログアウト
+    // =========================
+
+    if (logoutButton) {
+
+        logoutButton.addEventListener("click", async () => {
+
+            const result = confirm("ログアウトしますか？");
+
+            if (!result) {
+                return;
+            }
+
+            try {
+
+                const res = await fetch("/api/auth/logout", {
+                    method: "POST",
+                    credentials: "include"
+                });
+
+                if (!res.ok) {
+                    alert("ログアウトに失敗しました");
+                    return;
+                }
+
+                // ログイン画面へ移動
+                window.location.replace("login.html");
+
+            } catch (error) {
+
+                console.error("ログアウトエラー:", error);
+
+                alert("サーバーとの通信に失敗しました");
+
+            }
+
+        });
+
+    }
+
 });
 
 
@@ -166,12 +207,16 @@ function displaySchedules() {
 }
 
 
+
 // =========================
-// HTMLエスケープ関数
+// HTMLエスケープ
 // =========================
-function escapeHtmlMenu(text) {
-    if (!text) return "";
-    const div = document.createElement("div");
+
+function escapeHtmlMenu(text){
+
+    const div =
+        document.createElement("div");
+
     div.textContent = text;
     return div.innerHTML;
 }
