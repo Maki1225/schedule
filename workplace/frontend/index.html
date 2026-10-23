@@ -2,190 +2,215 @@
 <html lang="ja">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Study Planner</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Study Planner</title>
 
-    <!-- CSS -->
-    <link rel="stylesheet" href="css/style.css">
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/style.css">
 
-    <!-- FullCalendar -->
-    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.18/index.global.min.css" rel="stylesheet">
+  <!-- FullCalendar -->
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.18/index.global.min.css" rel="stylesheet">
 </head>
 
 <body>
 
-    <!-- =========================
+  <!-- =========================
             ヘッダー
     ========================== -->
-    <header>
-        <!-- メニューボタン -->
-        <button id="menuButton">☰</button>
+  <header>
+    <!-- メニューボタン -->
+    <button id="menuButton">☰</button>
 
-        <div class="logo">
-            <h1>Study Planner</h1>
-        </div>
+    <div class="logo">
+      <h1>Study Planner</h1>
+    </div>
 
-        <div class="header-right">
-            <div id="clock"></div>
+    <div class="header-right">
+      <div id="clock"></div>
 
-            <button id="addTaskButton">
-                ＋ 課題追加
-            </button>
+      <button id="addTaskButton">
+        ＋ 課題追加
+      </button>
 
-            <button id="addScheduleButton">
-                ＋ 予定追加
-            </button>
-        </div>
-    </header>
+      <button id="addScheduleButton">
+        ＋ 予定追加
+      </button>
+    </div>
+  </header>
 
-    <!-- =========================
+  <!-- =========================
             ダッシュボード
     ========================= -->
-    <section class="dashboard">
-        <div class="dashboard-card">
-            <h3>課題数</h3>
-            <p id="taskCount">0</p>
-        </div>
+  <section class="dashboard">
+    <div class="dashboard-card">
+      <h3>課題数</h3>
+      <p id="taskCount">0</p>
+    </div>
 
-        <div class="dashboard-card">
-            <h3>今日の締切</h3>
-            <p id="todayTaskCount">0</p>
-        </div>
+    <div class="dashboard-card">
+      <h3>今日の締切</h3>
+      <p id="todayTaskCount">0</p>
+    </div>
 
-        <div class="dashboard-card">
-            <h3>優先度：高</h3>
-            <p id="highPriorityCount">0</p>
-        </div>
-    </section>
+    <div class="dashboard-card">
+      <h3>優先度：高</h3>
+      <p id="highPriorityCount">0</p>
+    </div>
+  </section>
 
-    <!-- =========================
+  <!-- =========================
             メニュー
     ========================= -->
-    <div id="menuPanel">
-        <button id="calendarMenuButton">
-            📅 カレンダー
-        </button>
+  <div id="menuPanel">
+    <button id="shareMenuButton">👥 グループ共有</button>
+    <button id="calendarMenuButton">
+      📅 カレンダー
+    </button>
 
-        <button id="taskMenuButton">
-            📝 課題一覧
-        </button>
+    <button id="taskMenuButton">
+      📝 課題一覧
+    </button>
 
-        <button id="scheduleMenuButton">
-            📅 予定一覧
-        </button>
+    <button id="scheduleMenuButton">
+      📅 予定一覧
+    </button>
 
-        <button id="logoutButton">
-            ログアウト
-        </button>
-    </div>
+    <button id="logoutButton">
+      ログアウト
+    </button>
+  </div>
 
-    <!-- =========================
+  <!-- =========================
             メインコンテンツ切り替えエリア
     ========================== -->
-    <div class="container">
-        <main>
-            <!-- 1. カレンダー表示 -->
-            <section id="calendarView" class="view-section active">
-                <div class="calendar-section">
-                    <div id="calendar"></div>
-                </div>
-            </section>
+  <div class="container">
+    <main>
+      <!-- グループ共有画面 -->
+      <section id="shareView" class="view-section" style="display: none;">
+        <div class="task-section">
+          <h2>👥 グループ共有</h2>
 
-            <!-- 2. 課題一覧表示 -->
-            <section id="taskView" class="view-section" style="display: none;">
-                <div class="task-section">
-                    <h2>📝 課題一覧</h2>
-                    <div id="taskList"></div>
-                </div>
-            </section>
+          <h3>グループを作成する</h3>
+          <label for="groupName">グループ名</label>
+          <input type="text" id="groupName" placeholder="例：クラスの課題共有">
+          <button id="createGroupButton">グループ作成</button>
 
-            <!-- 3. 予定一覧表示 -->
-            <section id="scheduleView" class="view-section" style="display: none;">
-                <div class="task-section">
-                    <h2>📅 予定一覧</h2>
-                    <div id="scheduleList">
-                        予定がありません。
-                    </div>
-                </div>
-            </section>
-        </main>
-    </div>
+          <hr>
 
-    <!-- =========================
+          <h3>グループに参加する</h3>
+          <label for="nickname">ニックネーム</label>
+          <input type="text" id="nickname" placeholder="例：まき">
+
+          <label for="inviteCode">招待コード</label>
+          <input type="text" id="inviteCode" placeholder="招待コードを入力">
+          <button id="joinGroupButton">グループに参加</button>
+
+          <p id="shareMessage"></p>
+          <div id="groupInfo"></div>
+        </div>
+      </section>
+      <!-- 1. カレンダー表示 -->
+      <section id="calendarView" class="view-section active">
+        <div class="calendar-section">
+          <div id="calendar"></div>
+        </div>
+      </section>
+
+      <!-- 2. 課題一覧表示 -->
+      <section id="taskView" class="view-section" style="display: none;">
+        <div class="task-section">
+          <h2>📝 課題一覧</h2>
+          <div id="taskList"></div>
+        </div>
+      </section>
+
+      <!-- 3. 予定一覧表示 -->
+      <section id="scheduleView" class="view-section" style="display: none;">
+        <div class="task-section">
+          <h2>📅 予定一覧</h2>
+          <div id="scheduleList">
+            予定がありません。
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- =========================
             課題追加画面 (モーダル)
     ========================== -->
-    <div id="taskModal">
-        <div class="modal-header">
-            <h2>課題追加</h2>
-            <button id="closeModal">×</button>
-        </div>
-
-        <label>課題名</label>
-        <input type="text" id="taskTitle" placeholder="課題名を入力">
-
-        <label>提出期限</label>
-        <input type="date" id="deadline">
-
-        <label>課題をする日</label>
-        <input type="date" id="studyDate">
-
-        <label>必要時間（時間）</label>
-        <input type="number" id="studyTime" min="1" max="24">
-
-        <label>優先順位</label>
-        <select id="priority">
-            <option value="高">高</option>
-            <option value="中">中</option>
-            <option value="低">低</option>
-        </select>
-
-        <button id="saveTask">保存</button>
+  <div id="taskModal">
+    <div class="modal-header">
+      <h2>課題追加</h2>
+      <button id="closeModal">×</button>
     </div>
 
-    <!-- =========================
+    <label>課題名</label>
+    <input type="text" id="taskTitle" placeholder="課題名を入力">
+
+    <label>提出期限</label>
+    <input type="date" id="deadline">
+
+    <label>課題をする日</label>
+    <input type="date" id="studyDate">
+
+    <label>必要時間（時間）</label>
+    <input type="number" id="studyTime" min="1" max="24">
+
+    <label>優先順位</label>
+    <select id="priority">
+      <option value="高">高</option>
+      <option value="中">中</option>
+      <option value="低">低</option>
+    </select>
+
+    <button id="saveTask">保存</button>
+  </div>
+
+  <!-- =========================
             予定追加画面 (モーダル)
     ========================== -->
-    <div id="scheduleModal">
-        <div class="modal-header">
-            <h2>予定追加</h2>
-            <button id="closeScheduleModal">×</button>
-        </div>
-
-        <label>予定名</label>
-        <input type="text" id="scheduleTitle" placeholder="予定名を入力">
-
-        <label>予定の日</label>
-        <input type="date" id="scheduleDate">
-
-        <label>開始時間</label>
-        <input type="time" id="scheduleStartTime">
-
-        <label>終了時間</label>
-        <input type="time" id="scheduleEndTime">
-
-        <label>メモ</label>
-        <textarea id="scheduleMemo" placeholder="メモを入力"></textarea>
-
-        <button id="saveSchedule">保存</button>
+  <div id="scheduleModal">
+    <div class="modal-header">
+      <h2>予定追加</h2>
+      <button id="closeScheduleModal">×</button>
     </div>
 
-    <!-- JavaScript -->
-    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.18/index.global.min.js"></script>
-    <script src="js/common-auth.js"></script>
-    <script src="js/calendar.js"></script>
-    <script src="js/task.js"></script>
-    <script src="js/schedule.js"></script>
-    <script src="js/sidebar.js"></script>
-    <script src="js/notification.js"></script>
-    <script src="js/share.js"></script>
-    <script src="js/menu.js"></script>
-    <script src="js/main.js"></script>
+    <label>予定名</label>
+    <input type="text" id="scheduleTitle" placeholder="予定名を入力">
 
-    <footer class="footer-links">
-        <a href="privacy-policy.html">プライバシーポリシー</a>
-        <a href="terms-of-service.html">利用規約</a>
-    </footer>
+    <label>予定の日</label>
+    <input type="date" id="scheduleDate">
+
+    <label>開始時間</label>
+    <input type="time" id="scheduleStartTime">
+
+    <label>終了時間</label>
+    <input type="time" id="scheduleEndTime">
+
+    <label>メモ</label>
+    <textarea id="scheduleMemo" placeholder="メモを入力"></textarea>
+
+    <button id="saveSchedule">保存</button>
+  </div>
+
+  <!-- JavaScript -->
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.18/index.global.min.js"></script>
+  <script src="js/common-auth.js"></script>
+  <script src="js/calendar.js"></script>
+  <script src="js/task.js"></script>
+  <script src="js/schedule.js"></script>
+  <script src="js/sidebar.js"></script>
+  <script src="js/notification.js"></script>
+  <script src="js/share.js"></script>
+  <script src="js/menu.js"></script>
+  <script src="js/main.js"></script>
+
+  <footer class="footer-links">
+    <a href="privacy-policy.html">プライバシーポリシー</a>
+    <a href="terms-of-service.html">利用規約</a>
+  </footer>
 
 </body>
 
