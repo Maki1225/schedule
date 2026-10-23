@@ -1,21 +1,23 @@
-
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport"
-        content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <title>ログイン - Schedule App</title>
 
   <link rel="stylesheet" href="css/auth.css">
 
   <!-- Googleログイン -->
-  <script src="https://accounts.google.com/gsi/client"
-          async defer></script>
-  <script>window.API_BASE_URL = "/";</script>
-<script src="js/login.js" defer></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <<<<<<< HEAD <script>window.API_BASE_URL = "/";</script>
+    <script src="js/login.js" defer></script>
+    =======
+    <script src="js/google-auth.js" defer></script>
+    >>>>>>> 9268d46 (Google OAuth審査対策)
 </head>
+
 <body>
 
   <div class="auth-container">
@@ -28,9 +30,7 @@
         Googleアカウントを使用してログインしてください。
       </p>
 
-      <div
-        id="g_id_onload"
-        data-client_id="1067955587484-jiuifljib05r35bfj25orgjucl2ctjbe.apps.googleusercontent.com"
+      <div id="g_id_onload" data-client_id="1067955587484-jiuifljib05r35bfj25orgjucl2ctjbe.apps.googleusercontent.com"
         data-callback="handleCredentialResponse">
       </div>
 
@@ -40,7 +40,8 @@
           JavaScript (Code Client) から呼び出す独自ボタンに変更
         -->
         <button type="button" class="google-btn" onclick="loginWithGoogle()">
-          <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google logo" style="width: 20px; vertical-align: middle; margin-right: 8px;">
+          <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google logo"
+            style="width: 20px; vertical-align: middle; margin-right: 8px;">
           Googleでログイン
         </button>
       </div>
@@ -55,4 +56,5 @@
   </div>
 
 </body>
+
 </html>
