@@ -1,36 +1,68 @@
-// 1. 既にログイン済みなら index.html へリダイレクト
-document.addEventListener('DOMContentLoaded', async () => {
-  try {
-    const res = await fetch('/api/auth/me', { credentials: 'include' });
-    if (res.ok) {
-      // ログイン済みならメイン画面へ
-      window.location.href = '/index.html';
+
+const AUTH_API = "/api/auth";
+
+// すでにログイン済みならカレンダーへ移動
+document.addEventListener("DOMContentLoaded", async () => {
+    try {
+        const res = await fetch(`${AUTH_API}/me`, {
+            method: "GET",
+            credentials: "include"
+        });
+
+        if (res.ok) {
+            window.location.replace("calendar.html");
+        }
+
+    } catch (err) {
+        // 未ログインや通信エラーの場合はログイン画面を表示
+        console.log("ログイン状態を確認できませんでした");
     }
-  } catch (err) {
-    // 未ログイン（401等）やネットワークエラー時は何もしない（login.html をそのまま表示）
-    console.log('未ログイン状態です');
-  }
 });
 
-// 2. Google ログインボタンのコールバック関数
+// Googleログイン成功時のコールバック
 async function handleCredentialResponse(response) {
-  try {
-    const res = await fetch('/api/auth/google', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ credential: response.credential }),
-    });
+    const errorElement =
+        document.getElementById("login-error");
 
-    const data = await res.json();
-
-    if (res.ok) {
-      window.location.href = '/index.html';
-    } else {
-      alert(data.error || 'ログインに失敗しました');
+    if (errorElement) {
+        errorElement.textContent = "";
     }
-  } catch (err) {
-    console.error('通信エラー:', err);
-    alert('サーバーとの通信に失敗しました');
-  }
+
+    try {
+        const res = await fetch(`${AUTH_API}/google`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            credentials: "include",
+            body: JSON.stringify({
+                credential: response.credential
+            })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+            window.location.replace("calendar.html");
+        } else {
+            const message =
+                data.error || "ログインに失敗しました";
+
+            if (errorElement) {
+                errorElement.textContent = message;
+            } else {
+                alert(message);
+            }
+        }
+
+    } catch (err) {
+        console.error("Googleログインエラー:", err);
+
+        if (errorElement) {
+            errorElement.textContent =
+                "サーバーとの通信に失敗しました";
+        } else {
+            alert("サーバーとの通信に失敗しました");
+        }
+    }
 }

@@ -1,34 +1,34 @@
+
 <!DOCTYPE html>
 <html lang="ja">
 
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0">
 
   <title>ログイン - Schedule App</title>
 
-  <!-- ログイン画面のCSS -->
   <link rel="stylesheet" href="css/auth.css">
 
   <!-- Googleログイン -->
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <script src="js/google-auth.js"></script>
+  <script src="https://accounts.google.com/gsi/client"
+          async defer></script>
+  <script src="js/google-auth.js" defer></script>
 </head>
 
 <body>
 
   <div class="auth-container">
-
     <div class="auth-box">
 
       <h1>Schedule App</h1>
-
       <h2>ログイン</h2>
 
       <p class="login-description">
         Googleアカウントを使用してログインしてください。
       </p>
 
-      <!-- Googleログイン -->
       <div
         id="g_id_onload"
         data-client_id="1067955587484-jiuifljib05r35bfj25orgjucl2ctjbe.apps.googleusercontent.com"
@@ -43,54 +43,14 @@
         </div>
       </div>
 
+      <p id="login-error" class="error-message"></p>
+
+      <p style="margin-top: 25px;">
+        <a href="index.html">ホームページに戻る</a>
+      </p>
+
     </div>
-
   </div>
-
-  <script>
-    async function handleCredentialResponse(response) {
-
-      try {
-
-        const res = await fetch('http://localhost:5000/api/auth/google', {
-          method: 'POST',
-
-          headers: {
-            'Content-Type': 'application/json',
-          },
-
-          credentials: 'include',
-
-          body: JSON.stringify({
-            credential: response.credential
-          }),
-        });
-
-        const data = await res.json();
-
-        if (res.ok) {
-
-          alert('ログインに成功しました！');
-
-          window.location.href = 'index.html';
-
-        } else {
-
-          alert(
-            data.error ||
-            'ログインに失敗しました'
-          );
-
-        }
-
-      } catch (err) {
-
-        console.error('通信エラー:', err);
-
-      }
-
-    }
-  </script>
 
 </body>
 </html>
