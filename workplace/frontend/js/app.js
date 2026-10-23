@@ -17,40 +17,15 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
     }
 
-    // ユーザー名を表示
+    // 認証成功後に画面を表示
+    document.body.classList.add("authenticated");
+
+    // ユーザー名を表示（要素がある場合のみ）
     const userNameElement =
         document.getElementById("user-name");
 
     if (userNameElement) {
         userNameElement.textContent =
             `${user.name || user.email} さん`;
-    }
-
-    // ログアウトボタン
-    const logoutBtn =
-        document.getElementById("logout-btn");
-
-    if (logoutBtn) {
-        logoutBtn.addEventListener("click", async () => {
-
-            try {
-                const res = await fetch("/api/auth/logout", {
-                    method: "POST",
-                    credentials: "include"
-                });
-
-                if (!res.ok) {
-                    alert("ログアウトに失敗しました");
-                    return;
-                }
-
-                window.location.href = "login.html";
-
-            } catch (err) {
-                console.error("ログアウトエラー:", err);
-                alert("通信エラーが発生しました");
-            }
-
-        });
     }
 });
