@@ -1,30 +1,27 @@
-import { AppContext, Env } from '../types/hono'
-import { Next } from 'hono'
+import { Context, Next } from 'hono'
 import { getCookie } from 'hono/cookie'
 import { verify } from 'hono/jwt'
 
-const getJwtSecret = (): string => {
-  const secret = process.env.JWT_SECRET
-  if (!secret) {
-    throw new Error('FATAL: JWT_SECRET environment variable is not set.')
+export const authCheck = async (c: Context, next: Next) => {
+  // 1. Cookie から token を取得
+  const token = getCookie(c, 'token') || c.req.header('Authorization')?.replace('Bearer ', '')
+
+  if (!token) {
+    // 400 から 401 に変更
+    return c.json({ error: '認証トークンがありません' }, 401)
   }
-  return secret
-}
 
-
-export const authCheck = async (c: AppContext, next: Next) => {
   try {
-    const token = getCookie(c, 'token')
+    // 2. JWT の検証
+    const secret = process.env.JWT_SECRET || 'your-secret-key'
+    const payload = await verify(token, secret, 'HS256')
 
-    if (!token) {
-      return c.json({ error: '認証トークンが存在しません。ログインしてください' }, 401)
-    }
+    // コンテキストにユーザー情報を保存
+    c.set('jwtPayload', payload)
 
-    // JWT の検証 (HS256)
-    const payload = await verify(token, getJwtSecret(), 'HS256')
-    c.set('jwtPayload', payload as Env['Variables']['jwtPayload'])
     await next()
-  } catch (error) {
-    return c.json({ error: '無効または期限切れのトークンです' }, 401)
+  } catch (err) {
+    console.error('JWT検証エラー:', err)
+    return c.json({ error: '無効なトークンです' }, 401)
   }
 }

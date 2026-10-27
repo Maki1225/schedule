@@ -2,14 +2,14 @@ import { OAuth2Client } from 'google-auth-library'
 import { AppContext } from '../types/hono'
 import { setCookie, deleteCookie } from 'hono/cookie'
 import { sign } from 'hono/jwt'
-import argon2 from 'argon2'
-import crypto from 'crypto'
-import { sql } from '../config/db'
 import { UserModel } from '../models/userModel'
 
-const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
+const googleClient = new OAuth2Client(
+  process.env.GOOGLE_CLIENT_ID,
+  process.env.GOOGLE_CLIENT_SECRET,
+  'postmessage' // popup（Code Client）認証用のリダイレクト識別子
+)
 
-// JWT秘密鍵を厳格に取得（フォールバック禁止）
 const getJwtSecret = (): string => {
   const secret = process.env.JWT_SECRET
   if (!secret) {
@@ -19,32 +19,56 @@ const getJwtSecret = (): string => {
 }
 
 export const AuthController = {
-  // 1. Google ログイン・新規登録
-  async googleLogin(c: AppContext, credential: string) {
+  async googleLogin(c: AppContext) {
     try {
+      const { code } = await c.req.json()
+
+      if (!code) {
+        return c.json({ error: '認可コードが必要です' }, 400)
+      }
+
+      // 1. 認可コードを各種トークン（Access / Refresh / ID Token）と交換
+      const { tokens } = await googleClient.getToken(code)
+      googleClient.setCredentials(tokens)
+
+      // 2. IDトークンからユーザー情報を取得
+      if (!tokens.id_token) {
+        return c.json({ error: 'IDトークンを取得できませんでした' }, 400)
+      }
+
       const ticket = await googleClient.verifyIdToken({
-        idToken: credential,
+        idToken: tokens.id_token,
         audience: process.env.GOOGLE_CLIENT_ID,
       })
       const payload = ticket.getPayload()
 
       if (!payload || !payload.email || !payload.email_verified) {
-        return c.json({ error: '未検証の Google アカウントまたは無効なトークンです' }, 400)
+        return c.json({ error: '未検証の Google アカウントです' }, 400)
       }
 
-      const { email, name } = payload
-      let user = await UserModel.findByEmail(email)
+      const googleId = payload.sub
+      const email = payload.email!
+      const name = payload.name || 'Google User'
+      const picture = payload.picture || ''
+
+      // 3. ユーザー検索または新規登録
+      let user = await UserModel.findByGoogleId(googleId)
+      if (!user && email) {
+        user = await UserModel.findByEmail(email)
+      }
 
       if (!user) {
-        const dummyHash = await argon2.hash(crypto.randomUUID())
-        const [newUser] = await sql`
-          INSERT INTO users (name, email, password_hash)
-          VALUES (${name || 'Google User'}, ${email}, ${dummyHash})
-          RETURNING id, name, email
-        `
-        user = newUser
+        user = await UserModel.createGoogleUser(googleId, name, email, picture)
       }
 
+      // 4. API連携用トークンを DB に格納
+      await UserModel.updateGoogleTokens(user.id, {
+        accessToken: tokens.access_token || null,
+        refreshToken: tokens.refresh_token || null,
+        expiryDate: tokens.expiry_date || null,
+      })
+
+      // 5. アプリ内認証用 JWT の発行と Cookie セット
       const token = await sign(
         {
           id: user.id,
@@ -63,22 +87,23 @@ export const AuthController = {
       })
 
       return c.json({
-        message: 'Google ログインに成功しました',
-        user: { id: user.id, name: user.name, email: user.email },
+        message: 'Google 連携・ログインに成功しました',
+        user: { id: user.id, name: user.name, email: user.email, picture: user.picture },
       })
     } catch (err) {
-      console.error(err)
-      return c.json({ error: 'Google 認証に失敗しました' }, 500)
+      console.error('Google 認証エラー:', err)
+      return c.json({ error: 'Google 認証処理に失敗しました' }, 500)
     }
   },
 
-  // 2. ログイン状態確認 (GET /api/auth/me)
   async getMe(c: AppContext) {
     const payload = c.get('jwtPayload')
+    if (!payload) {
+      return c.json({ error: '未認証のユーザーです' }, 401)
+    }
     return c.json({ user: payload })
   },
 
-  // 3. ログアウト (POST /api/auth/logout)
   async logout(c: AppContext) {
     deleteCookie(c, 'token', {
       path: '/',

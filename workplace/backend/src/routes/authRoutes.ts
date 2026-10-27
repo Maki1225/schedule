@@ -5,18 +5,20 @@ import { authCheck } from '../middleware/authMiddleware'
 
 export const authRoutes = new Hono<Env>()
 
-// Google 認証
+// Google 認可コード (code) によるログイン
 authRoutes.post('/google', async (c) => {
-  const { credential } = await c.req.json().catch(() => ({}))
+  const body = await c.req.json().catch(() => ({}))
+  const code = body.code
 
-  if (!credential) {
-    return c.json({ error: 'Google 認証情報 (credential) がありません' }, 400)
+  if (!code) {
+    return c.json({ error: '認可コード (code) が必要です' }, 400)
   }
 
-  return AuthController.googleLogin(c, credential)
+  // AuthController の設計に合わせて `c`（Context）のみを渡す
+  return AuthController.googleLogin(c)
 })
 
-// ログイン中のユーザー情報取得（要認証ミドルウェア）
+// ログイン中のユーザー情報取得
 authRoutes.get('/me', authCheck, (c) => AuthController.getMe(c))
 
 // ログアウト

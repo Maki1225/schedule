@@ -1,26 +1,22 @@
 import { z } from 'zod'
 
-const isValidDateString = (val: string): boolean => {
-  const date = new Date(val)
-  return !isNaN(date.getTime())
-}
+const isValidDateString = (val: string): boolean => !isNaN(new Date(val).getTime())
 
-// 1. ベースとなる純粋なオブジェクトスキーマ（.refine を付けない）
 const baseEventSchema = z.object({
   group_id: z.number({ message: 'グループIDは必須です' }),
   title: z.string().min(1, 'タイトルを入力してください').max(100, 'タイトルは100文字以内で入力してください'),
-  description: z.string().optional(),
+  description: z.string().nullable().optional(),
   start_time: z.string().refine(isValidDateString, {
     message: '正しい日時フォーマット(ISO8601)で指定してください',
   }),
   end_time: z.string().refine(isValidDateString, {
     message: '正しい日時フォーマット(ISO8601)で指定してください',
   }),
-  subject: z.string().optional(),
-  subject_color: z.string().optional(),
+  subject: z.string().nullable().optional(),
+  subject_color: z.string().nullable().optional(),
 })
 
-// 2. 新規作成用スキーマ (ベースオブジェクトに refine を追加)
+// 新規作成用
 export const createEventSchema = baseEventSchema.refine(
   (data) => new Date(data.start_time) < new Date(data.end_time),
   {
@@ -29,13 +25,12 @@ export const createEventSchema = baseEventSchema.refine(
   }
 )
 
-// 3. 更新用スキーマ (ベースオブジェクトに対して partial と omit を実行した後に refine を追加)
+// 更新用 (group_id は変更不可とし、全フィールドを optional に)
 export const updateEventSchema = baseEventSchema
   .omit({ group_id: true })
   .partial()
   .refine(
     (data) => {
-      // 両方入力されている場合のみ開始・終了時刻の前後関係をチェック
       if (data.start_time && data.end_time) {
         return new Date(data.start_time) < new Date(data.end_time)
       }

@@ -8,6 +8,13 @@ export const EventController = {
     try {
       const user = c.get('jwtPayload')
       const { group_id, title, description, start_time, end_time, subject, subject_color } = data
+
+      // 日付の論理バリデーション
+      if (new Date(start_time) >= new Date(end_time)) {
+        return c.json({ error: '終了時刻は開始時刻より後の時間を指定してください' }, 400)
+      }
+
+      // グループ所属権限の確認
       const [membership] = await sql`
         SELECT role FROM group_members WHERE user_id = ${user.id} AND group_id = ${group_id}
       `
@@ -16,14 +23,18 @@ export const EventController = {
       }
 
       const [newEvent] = await sql`
-        INSERT INTO events (group_id, created_by, title, description, start_time, end_time, subject, subject_color)
-        VALUES (${group_id}, ${user.id}, ${title}, ${description || null}, ${start_time}, ${end_time}, ${subject || null}, ${subject_color || null})
+        INSERT INTO events (
+          group_id, created_by, title, description, start_time, end_time, subject, subject_color
+        )
+        VALUES (
+          ${group_id}, ${user.id}, ${title}, ${description ?? null}, ${start_time}, ${end_time}, ${subject ?? null}, ${subject_color ?? null}
+        )
         RETURNING *
       `
 
       return c.json({ message: '予定を作成しました', event: newEvent }, 201)
     } catch (err) {
-      console.error(err)
+      console.error('[EventController.create Error]:', err)
       return c.json({ error: '予定の作成に失敗しました' }, 500)
     }
   },
@@ -46,7 +57,9 @@ export const EventController = {
       }
 
       const events = await sql`
-        SELECT e.*, u.name as creator_name
+        SELECT
+          e.*,
+          u.name as creator_name
         FROM events e
         LEFT JOIN users u ON e.created_by = u.id
         WHERE e.group_id = ${groupId}
@@ -55,7 +68,7 @@ export const EventController = {
 
       return c.json({ events }, 200)
     } catch (err) {
-      console.error(err)
+      console.error('[EventController.getByGroup Error]:', err)
       return c.json({ error: '予定の取得に失敗しました' }, 500)
     }
   },
@@ -65,6 +78,7 @@ export const EventController = {
     try {
       const user = c.get('jwtPayload')
       const eventId = c.req.param('id')
+
       const [existingEvent] = await sql`
         SELECT e.*, gm.role
         FROM events e
@@ -76,16 +90,23 @@ export const EventController = {
         return c.json({ error: '該当する予定が見つかりません' }, 404)
       }
 
+      // 作成者本人または管理者(admin)のみ更新可
       if (existingEvent.created_by !== user.id && existingEvent.role !== 'admin') {
         return c.json({ error: 'この予定を更新する権限がありません' }, 403)
       }
 
-      const title = data.title ?? existingEvent.title
-      const description = data.description ?? existingEvent.description
-      const start_time = data.start_time ?? existingEvent.start_time
-      const end_time = data.end_time ?? existingEvent.end_time
-      const subject = data.subject ?? existingEvent.subject
-      const subject_color = data.subject_color ?? existingEvent.subject_color
+      // 明示的に渡されたプロパティを割り当てる（Nullクリア対応）
+      const title = 'title' in data ? data.title : existingEvent.title
+      const description = 'description' in data ? data.description : existingEvent.description
+      const start_time = 'start_time' in data ? data.start_time : existingEvent.start_time
+      const end_time = 'end_time' in data ? data.end_time : existingEvent.end_time
+      const subject = 'subject' in data ? data.subject : existingEvent.subject
+      const subject_color = 'subject_color' in data ? data.subject_color : existingEvent.subject_color
+
+      // 更新時の日付比較
+      if (new Date(start_time!) >= new Date(end_time!)) {
+        return c.json({ error: '終了時刻は開始時刻より後の時間を指定してください' }, 400)
+      }
 
       const [updatedEvent] = await sql`
         UPDATE events
@@ -101,7 +122,7 @@ export const EventController = {
 
       return c.json({ message: '予定を更新しました', event: updatedEvent }, 200)
     } catch (err) {
-      console.error(err)
+      console.error('[EventController.update Error]:', err)
       return c.json({ error: '予定の更新に失敗しました' }, 500)
     }
   },
@@ -111,6 +132,7 @@ export const EventController = {
     try {
       const user = c.get('jwtPayload')
       const eventId = c.req.param('id')
+
       const [target] = await sql`
         SELECT e.id, e.created_by, gm.role
         FROM events e
@@ -130,7 +152,7 @@ export const EventController = {
 
       return c.json({ message: '予定を削除しました' }, 200)
     } catch (err) {
-      console.error(err)
+      console.error('[EventController.delete Error]:', err)
       return c.json({ error: '予定の削除に失敗しました' }, 500)
     }
   }

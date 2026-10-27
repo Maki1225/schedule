@@ -6,26 +6,60 @@ import { cors } from 'hono/cors'
 import { Env } from './src/types/hono'
 import eventRoutes from './src/routes/eventRoutes'
 import authRoutes from './src/routes/authRoutes'
+import groupRoutes from './src/routes/groupRoutes'
 
 const app = new Hono<Env>()
 
 // 1. セキュリティヘッダー
-app.use('*', secureHeaders())
+app.use(
+  '*',
+  secureHeaders({
+    crossOriginOpenerPolicy: 'unsafe-none',
+  })
+)
 
 // 2. CORS設定
 app.use(
   '/api/*',
   cors({
-    origin: (origin) => origin || '*',
+    origin: (origin) => {
+      const allowedOrigins = [
+        'http://127.0.0.1:5500',
+        'http://localhost:5500',
+        'http://127.0.0.1:5000',
+        'http://localhost:5000',
+        'https://schedule-sai.vercel.app',
+        'https://schedule-backend-navy.vercel.app',
+      ]
+      if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+        return origin || '*'
+      }
+      return null
+    },
     credentials: true,
+    allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowHeaders: ['Content-Type', 'Authorization'],
   })
 )
 
-// 3. APIルートの登録
+// 3. エラーハンドラ
+app.onError((err, c) => {
+  console.error('★ サーバーエラー詳細:', err)
+  return c.json(
+    {
+      error: 'サーバー内部エラーが発生しました',
+      message: err.message,
+    },
+    500
+  )
+})
+
+// 4. APIルートの登録
 app.route('/api/events', eventRoutes)
 app.route('/api/auth', authRoutes)
+app.route('/api/groups', groupRoutes)
 
-// ローカル開発用サーバー起動
+// 5. ローカル開発用サーバー起動
 if (process.env.NODE_ENV !== 'production') {
   const port = Number(process.env.PORT) || 5000
   serve(
@@ -39,5 +73,13 @@ if (process.env.NODE_ENV !== 'production') {
     }
   )
 }
+
+// Vercel Serverless Functions 用 (fetch をそのままエクスポート)
+export const GET = app.fetch
+export const POST = app.fetch
+export const PUT = app.fetch
+export const DELETE = app.fetch
+export const PATCH = app.fetch
+export const OPTIONS = app.fetch
 
 export default app

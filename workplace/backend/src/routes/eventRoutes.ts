@@ -6,6 +6,7 @@ import { createEventSchema, updateEventSchema } from '../validators/eventValidat
 
 const eventRoutes = new Hono<Env>()
 
+// すべてのルートに認証チェックを適用
 eventRoutes.use('*', authCheck)
 
 // GET  /api/events/
@@ -24,7 +25,20 @@ eventRoutes.post('/', async (c) => {
   return EventController.create(c, result.data)
 })
 
+// PUT /api/events/:id  <-- 追加
+eventRoutes.put('/:id', async (c) => {
+  const body = await c.req.json().catch(() => ({}))
+  const result = updateEventSchema.safeParse(body)
+
+  if (!result.success) {
+    const errors = result.error.issues.map((issue) => issue.message)
+    return c.json({ errors }, 400)
+  }
+
+  return EventController.update(c, result.data)
+})
+
 // DELETE /api/events/:id
-eventRoutes.delete('/:id', authCheck, EventController.delete)
+eventRoutes.delete('/:id', EventController.delete)
 
 export default eventRoutes

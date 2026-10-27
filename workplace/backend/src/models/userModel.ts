@@ -1,19 +1,66 @@
 import { sql } from '../config/db'
 
+export interface User {
+  id: number
+  google_id: string
+  name: string
+  email: string
+  picture?: string
+  google_access_token?: string
+  google_refresh_token?: string
+  google_token_expires_at?: number
+}
+
 export const UserModel = {
-  // メールアドレスでユーザーを検索
-  async findByEmail(email: string) {
-    const result = await sql`SELECT * FROM users WHERE email = ${email}`
-    return result[0] || null
+  async findByGoogleId(googleId: string): Promise<User | null> {
+    const result = await sql`SELECT * FROM users WHERE google_id = ${googleId}`
+    if (result.length === 0) return null
+    return result[0] as User
   },
 
-  // ユーザーの新規作成
-  async create(name: string, email: string, passwordHash: string) {
+  async findByEmail(email: string): Promise<User | null> {
+    const result = await sql`SELECT * FROM users WHERE email = ${email}`
+    if (result.length === 0) return null
+    return result[0] as User
+  },
+
+  async createGoogleUser(
+    googleId: string,
+    name: string,
+    email: string,
+    picture: string
+  ): Promise<User> {
     const result = await sql`
-      INSERT INTO users (name, email, password_hash)
-      VALUES (${name}, ${email}, ${passwordHash})
-      RETURNING id, name, email
+      INSERT INTO users (google_id, name, email, picture)
+      VALUES (${googleId}, ${name}, ${email}, ${picture})
+      RETURNING *
     `
-    return result[0]
-  }
+    return result[0] as User
+  },
+
+  async updateGoogleTokens(
+    userId: number,
+    tokens: {
+      accessToken: string | null
+      refreshToken: string | null
+      expiryDate: number | null
+    }
+  ) {
+    if (tokens.refreshToken) {
+      await sql`
+        UPDATE users
+        SET google_access_token = ${tokens.accessToken},
+            google_refresh_token = ${tokens.refreshToken},
+            google_token_expires_at = ${tokens.expiryDate}
+        WHERE id = ${userId}
+      `
+    } else {
+      await sql`
+        UPDATE users
+        SET google_access_token = ${tokens.accessToken},
+            google_token_expires_at = ${tokens.expiryDate}
+        WHERE id = ${userId}
+      `
+    }
+  },
 }
