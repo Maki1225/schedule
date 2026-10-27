@@ -1,7 +1,7 @@
 # Schedule Management App
 
 ## 📋 概要
-Google認証を使用したスケジュール・課題管理アプリケーション。
+スケジュール・課題管理アプリケーション。
 
 ## 🎉 主な機能
 - Google OAuth認証

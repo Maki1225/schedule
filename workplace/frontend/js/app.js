@@ -1,25 +1,16 @@
-// 環境（ローカルか本番か）に応じて API のベース URL を自動切り替え
-const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-  ? 'http://localhost:5000'
-  : '';
 
+document.addEventListener("DOMContentLoaded", async () => {
 
-document.addEventListener('DOMContentLoaded', async () => {
-  // 1. ログイン状態の確認 (未ログインなら login.html へ強制リダイレクト)
-  try {
-    const res = await fetch(`${API_BASE_URL}/api/auth/me`, { credentials: 'include' });
-    if (!res.ok) {
-      window.location.href = '/login.html';
-      return;
+    // カレンダー画面以外では実行しない
+    const currentPage =
+        window.location.pathname.split("/").pop();
+
+    if (currentPage !== "calendar.html") {
+        return;
     }
 
-    const data = await res.json();
-    // 画面にユーザー名を表示
-    document.getElementById('user-name').textContent = `${data.user.name || data.user.email} さん`;
-  } catch (err) {
-    window.location.href = '/login.html';
-    return;
-  }
+    // ログイン状態を確認
+    const user = await requireAuth();
 
   // 2. ログアウトボタンの処理設定
   const logoutBtn = document.getElementById('logout-btn');
