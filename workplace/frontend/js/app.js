@@ -12,20 +12,20 @@ document.addEventListener("DOMContentLoaded", async () => {
     // ログイン状態を確認
     const user = await requireAuth();
 
-  // 2. ログアウトボタンの処理設定
-  const logoutBtn = document.getElementById('logout-btn');
-  if (logoutBtn) {
-    logoutBtn.addEventListener('click', async () => {
-      try {
-        await fetch(`${API_BASE_URL}/api/auth/logout`, {
-          method: 'POST',
-          credentials: 'include',
-        });
-        // ログアウト完了後、ログイン画面へ遷移
-        window.location.href = '/login.html';
-      } catch (err) {
-        console.error('ログアウトエラー:', err);
-      }
-    });
-  }
+    // 未ログインなら処理を終了
+    if (!user) {
+        return;
+    }
+
+    // 認証成功後に画面を表示
+    document.body.classList.add("authenticated");
+
+    // ユーザー名を表示（要素がある場合のみ）
+    const userNameElement =
+        document.getElementById("user-name");
+
+    if (userNameElement) {
+        userNameElement.textContent =
+            `${user.name || user.email} さん`;
+    }
 });
