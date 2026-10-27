@@ -102,47 +102,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // =========================
-    // ログアウト
-    // =========================
-
-    if (logoutButton) {
-
-        logoutButton.addEventListener("click", async () => {
-
-            const result = confirm("ログアウトしますか？");
-
-            if (!result) {
-                return;
-            }
-
-            try {
-
-                const res = await fetch("/api/auth/logout", {
-                    method: "POST",
-                    credentials: "include"
-                });
-
-                if (!res.ok) {
-                    alert("ログアウトに失敗しました");
-                    return;
-                }
-
-                // ログイン画面へ移動
-                window.location.replace("login.html");
-
-            } catch (error) {
-
-                console.error("ログアウトエラー:", error);
-
-                alert("サーバーとの通信に失敗しました");
-
-            }
-
-        });
-
-    }
-
 });
 
 
