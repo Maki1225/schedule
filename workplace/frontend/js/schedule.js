@@ -1,112 +1,101 @@
-// スケジュール一覧の取得
-async function fetchSchedules() {
+// 予定の追加処理
+async function addSchedule(title, date, startTime, endTime, memo) {
   try {
-    const res = await fetch('/api/events', {
-      method: 'GET',
-      credentials: 'include',
-    });
+    // タイムゾーン（+09:00）を考慮したISO文字列を作成
+    // 例: "2026-10-01T10:00:00+09:00"
+    const startIso = `${date}T${startTime}:00+09:00`;
+    const endIso = `${date}T${endTime}:00+09:00`;
 
-    if (res.status === 401) {
-      redirectToLogin();
-      return [];
-    }
-
-    if (!res.ok) throw new Error('スケジュールの取得に失敗しました');
-
-    const events = await res.json();
-    return events;
-  } catch (err) {
-    console.error(err);
-    return [];
-  }
-}
-
-// 新規スケジュールの作成
-async function createSchedule(scheduleData) {
-  try {
-    const res = await fetch('/api/events', {
+    const res = await fetch(`${API_BASE_URL}/api/events`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
       body: JSON.stringify({
-        title: scheduleData.title,
-        description: scheduleData.description || '',
-        start_time: scheduleData.startTime,
-        end_time: scheduleData.endTime,
-        subject: scheduleData.subject || '',
-        subject_color: scheduleData.color || '#3788d8',
+        title: title,
+        description: memo || '予定',
+        start_time: new Date(startIso).toISOString(), // または startIso そのまま
+        end_time: new Date(endIso).toISOString(),
       }),
     });
 
-    if (!res.ok) {
-      const error = await res.json();
-      alert(error.error || '登録に失敗しました');
-      return false;
+    if (res.ok) {
+      if (typeof updateDashboard === 'function') updateDashboard();
+      if (typeof updateCalendar === 'function') updateCalendar();
+      return true; // 成功を呼び出し元に伝える
+    } else {
+      const errorData = await res.json().catch(() => ({}));
+      alert(errorData.message || '予定の追加に失敗しました');
+      return false; // 失敗を伝える
     }
-
-    return true;
   } catch (err) {
-    console.error('通信エラー:', err);
+    console.error('予定追加エラー:', err);
+    alert('通信エラーが発生しました');
     return false;
   }
 }
 
-// モーダルの開閉と保存のイベント設定
 document.addEventListener('DOMContentLoaded', () => {
-  const addScheduleBtn = document.getElementById('addScheduleButton');
+  const addScheduleButton = document.getElementById('addScheduleButton');
   const scheduleModal = document.getElementById('scheduleModal');
-  const closeScheduleBtn = document.getElementById('closeScheduleModal');
-  const saveScheduleBtn = document.getElementById('saveSchedule');
+  const closeScheduleModal = document.getElementById('closeScheduleModal');
+  const saveScheduleButton = document.getElementById('saveSchedule');
 
-  // モーダルを開く
-  if (addScheduleBtn && scheduleModal) {
-    addScheduleBtn.addEventListener('click', () => {
+  // フォームのリセット関数
+  const resetScheduleForm = () => {
+    document.getElementById('scheduleTitle').value = '';
+    document.getElementById('scheduleDate').value = '';
+    document.getElementById('scheduleStartTime').value = '';
+    document.getElementById('scheduleEndTime').value = '';
+    const memoEl = document.getElementById('scheduleMemo');
+    if (memoEl) memoEl.value = '';
+  };
+
+  // 1. 「＋ 予定追加」ボタンでモーダルを開く
+  if (addScheduleButton && scheduleModal) {
+    addScheduleButton.addEventListener('click', () => {
+      scheduleModal.classList.add('active');
       scheduleModal.style.display = 'block';
     });
   }
 
-  // モーダルを閉じる
-  if (closeScheduleBtn && scheduleModal) {
-    closeScheduleBtn.addEventListener('click', () => {
+  // 2. 「×」ボタンで閉じる
+  if (closeScheduleModal && scheduleModal) {
+    closeScheduleModal.addEventListener('click', () => {
+      scheduleModal.classList.remove('active');
       scheduleModal.style.display = 'none';
+      resetScheduleForm();
     });
   }
 
-  // 保存ボタン押下処理
-  if (saveScheduleBtn) {
-    saveScheduleBtn.addEventListener('click', async () => {
-      const title = document.getElementById('scheduleTitle').value;
-      const date = document.getElementById('scheduleDate').value;
-      const startTime = document.getElementById('scheduleStartTime').value;
-      const endTime = document.getElementById('scheduleEndTime').value;
-      const memo = document.getElementById('scheduleMemo').value;
+  // 3. 「保存」ボタンの処理
+  if (saveScheduleButton) {
+    saveScheduleButton.addEventListener('click', async () => {
+      const title = document.getElementById('scheduleTitle')?.value.trim();
+      const date = document.getElementById('scheduleDate')?.value;
+      const startTime = document.getElementById('scheduleStartTime')?.value;
+      const endTime = document.getElementById('scheduleEndTime')?.value;
+      const memo = document.getElementById('scheduleMemo')?.value;
 
-      if (!title || !date) {
-        alert('予定名と日付を入力してください');
+      if (!title || !date || !startTime || !endTime) {
+        alert('予定名、日付、時間をすべて入力してください');
         return;
       }
 
-      const startDateTime = startTime ? `${date}T${startTime}:00` : `${date}T00:00:00`;
-      const endDateTime = endTime ? `${date}T${endTime}:00` : `${date}T23:59:59`;
+      // 開始時刻より終了時刻が前になっていないかチェック
+      if (`${date}T${startTime}` >= `${date}T${endTime}`) {
+        alert('終了時刻は開始時刻より後に設定してください');
+        return;
+      }
 
-      const success = await createSchedule({
-        title,
-        startTime: startDateTime,
-        endTime: endDateTime,
-        description: memo,
-      });
+      // 追加APIを実行し、成功した場合のみフォームを閉じる
+      const success = await addSchedule(title, date, startTime, endTime, memo);
 
       if (success) {
-        scheduleModal.style.display = 'none';
-        // 入力フォームのクリア
-        document.getElementById('scheduleTitle').value = '';
-        document.getElementById('scheduleDate').value = '';
-        document.getElementById('scheduleStartTime').value = '';
-        document.getElementById('scheduleEndTime').value = '';
-        document.getElementById('scheduleMemo').value = '';
-
-        // カレンダーや一覧の更新関数があれば呼ぶ
-        if (typeof initCalendar === 'function') initCalendar();
+        resetScheduleForm();
+        if (scheduleModal) {
+          scheduleModal.classList.remove('active');
+          scheduleModal.style.display = 'none';
+        }
       }
     });
   }

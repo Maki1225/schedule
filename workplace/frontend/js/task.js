@@ -1,15 +1,17 @@
 // 課題一覧の取得と表示
 async function loadTasks() {
   try {
-    const res = await fetch('/api/events', {
+    const res = await fetch(`${API_BASE_URL}/api/events`, {
       method: 'GET',
       credentials: 'include',
     });
 
     if (res.status === 401) {
-      window.location.href = '/login.html';
+      window.location.href = 'login.html';
       return;
     }
+
+    if (!res.ok) return;
 
     const tasks = await res.json();
     renderTaskList(tasks);
@@ -20,20 +22,27 @@ async function loadTasks() {
 
 // 課題カードの安全な描写 (XSS対策)
 function renderTaskList(tasks) {
-  const container = document.getElementById('task-list');
+  // HTML側の id="taskList" に合わせる
+  const container = document.getElementById('taskList');
   if (!container) return;
 
-  container.innerHTML = ''; // クリア
+  container.innerHTML = '';
+
+  if (tasks.length === 0) {
+    container.innerHTML = '<p>課題はありません。</p>';
+    return;
+  }
 
   tasks.forEach((task) => {
     const card = document.createElement('div');
     card.className = 'task-card';
 
     const titleEl = document.createElement('h3');
-    titleEl.textContent = task.title; // innerHTML ではなく textContent を使用
+    titleEl.textContent = task.title;
 
     const deadlineEl = document.createElement('p');
-    deadlineEl.textContent = `📅 期限: ${new Date(task.end_time).toLocaleString()}`;
+    const deadlineText = task.end_time ? new Date(task.end_time).toLocaleDateString('ja-JP') : '未設定';
+    deadlineEl.textContent = `📅 期限: ${deadlineText}`;
 
     card.appendChild(titleEl);
     card.appendChild(deadlineEl);
@@ -44,20 +53,22 @@ function renderTaskList(tasks) {
 // 課題の追加
 async function addTask(title, deadline, description) {
   try {
-    const res = await fetch('/api/events', {
+    const res = await fetch(`${API_BASE_URL}/api/events`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
       body: JSON.stringify({
         title: title,
         description: description || '課題',
-        start_time: new Date().toISOString(), // 作成日時
-        end_time: deadline,
+        start_time: new Date().toISOString(),
+        end_time: deadline ? new Date(deadline).toISOString() : new Date().toISOString(),
       }),
     });
 
     if (res.ok) {
-      await loadTasks(); // 再読み込み
+      await loadTasks();
+      if (typeof updateDashboard === 'function') updateDashboard();
+      if (typeof updateCalendar === 'function') updateCalendar();
     } else {
       alert('課題の追加に失敗しました');
     }
@@ -78,13 +89,15 @@ document.addEventListener('DOMContentLoaded', () => {
   // 1. 「＋ 課題追加」ボタンでモーダルを開く
   if (addTaskButton && taskModal) {
     addTaskButton.addEventListener('click', () => {
-      taskModal.style.display = 'block'; // モーダルを表示（CSSの設計に合わせて調整してください）
+      taskModal.classList.add('active');
+      taskModal.style.display = 'block';
     });
   }
 
   // 2. モーダルの「×」ボタンで閉じる
   if (closeModal && taskModal) {
     closeModal.addEventListener('click', () => {
+      taskModal.classList.remove('active');
       taskModal.style.display = 'none';
     });
   }
@@ -101,13 +114,15 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      // API（POST /api/events）呼び出し
       await addTask(title, deadline, `優先度:${priority}`);
 
-      // 入力フォームのクリア & モーダルを閉じる
+      // フォームのクリア & モーダルを閉じる
       document.getElementById('taskTitle').value = '';
       document.getElementById('deadline').value = '';
-      if (taskModal) taskModal.style.display = 'none';
+      if (taskModal) {
+        taskModal.classList.remove('active');
+        taskModal.style.display = 'none';
+      }
     });
   }
 });
