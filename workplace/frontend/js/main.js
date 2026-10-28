@@ -1,27 +1,41 @@
+
 document.addEventListener("DOMContentLoaded", async () => {
-  // ログイン確認（共通認証関数の実行）
+  // ログイン確認
   if (typeof requireAuth === "function") {
     const user = await requireAuth(API_BASE_URL);
-    if (!user) return; // 未ログインなら requireAuth 内で login.html にリダイレクト
+    if (!user) return;
   }
 
   initializeApp();
 });
 
-// ---------------------------------------
 // アプリ初期化
-// ---------------------------------------
 function initializeApp() {
   console.log("初期化完了");
 
   updateClock();
-
-  // 1秒ごとに現在時刻を更新
   setInterval(updateClock, 1000);
 
-  // ダッシュボード更新 (APIからデータ取得)
+  // ダッシュボードを更新
   updateDashboard();
+
+  // 30秒ごとに、ほかのメンバーが追加した予定・課題を確認
+  setInterval(() => {
+    if (localStorage.getItem("selectedGroupId")) {
+      updateDashboard();
+
+      if (typeof loadTasks === "function") {
+        loadTasks();
+      }
+
+      if (typeof updateCalendar === "function") {
+        updateCalendar();
+      }
+    }
+  }, 30000);
 }
+
+// 時計を更新
 function updateClock() {
   const now = new Date();
 
@@ -32,55 +46,87 @@ function updateClock() {
   const minute = String(now.getMinutes()).padStart(2, "0");
   const second = String(now.getSeconds()).padStart(2, "0");
 
-  const text = `${year}/${month}/${day} ${hour}:${minute}:${second}`;
-
   const clock = document.getElementById("clock");
+
   if (clock) {
-    clock.textContent = text;
+    clock.textContent =
+      `${year}/${month}/${day} ${hour}:${minute}:${second}`;
   }
 }
 
+// ダッシュボードを更新
 async function updateDashboard() {
+  const groupId = localStorage.getItem("selectedGroupId");
+
+  const taskCountEl = document.getElementById("taskCount");
+  const todayTaskCountEl = document.getElementById("todayTaskCount");
+  const highPriorityCountEl = document.getElementById("highPriorityCount");
+
+  if (!groupId) {
+    if (taskCountEl) taskCountEl.textContent = "0";
+    if (todayTaskCountEl) todayTaskCountEl.textContent = "0";
+    if (highPriorityCountEl) highPriorityCountEl.textContent = "0";
+    return;
+  }
+
   try {
-    const res = await fetch(`${API_BASE_URL}/api/events`, {
-      method: "GET",
-      credentials: "include", // Cookie送信
-    });
+    const res = await fetch(
+      `${API_BASE_URL}/api/events?groupId=${encodeURIComponent(groupId)}`,
+      {
+        method: "GET",
+        credentials: "include",
+      }
+    );
+
+    if (res.status === 401) {
+      window.location.href = "login.html";
+      return;
+    }
 
     if (!res.ok) {
       console.error("ダッシュボードデータの取得に失敗しました");
       return;
     }
 
-    const tasks = await res.json();
+    const data = await res.json();
+    const events = Array.isArray(data.events) ? data.events : [];
 
-    // 2. 全登録数
-    const taskCountEl = document.getElementById("taskCount");
-    if (taskCountEl) taskCountEl.textContent = tasks.length;
+    // 全課題・予定の件数
+    if (taskCountEl) {
+      taskCountEl.textContent = events.length;
+    }
 
-    // 3. 今日締切の計算 (日付フォーマット YYYY-MM-DD を抽出)
-    const today = new Date().toISOString().split("T")[0];
-
-    const todayTasks = tasks.filter((task) => {
-      if (!task.end_time) return false;
-      // DB側の end_time (ISO文字列) から年月日(YYYY-MM-DD)部分を取り出して比較
-      const taskDeadlineDate = new Date(task.end_time).toISOString().split("T")[0];
-      return taskDeadlineDate === today;
+    // 今日が期限の課題・予定
+    const today = new Date().toLocaleDateString("sv-SE", {
+      timeZone: "Asia/Tokyo",
     });
 
-    const todayTaskCountEl = document.getElementById("todayTaskCount");
-    if (todayTaskCountEl) todayTaskCountEl.textContent = todayTasks.length;
+    const todayEvents = events.filter((event) => {
+      if (!event.end_time) return false;
 
-    // 4. 優先度：高 のカウント
-    // ※ DBのイベントテーブルに priority または description 等で判定する場合の処理
-    const highPriority = tasks.filter(
-      (task) => task.priority === "高" || (task.description && task.description.includes("優先度:高"))
+      const deadline = new Date(event.end_time).toLocaleDateString("sv-SE", {
+        timeZone: "Asia/Tokyo",
+      });
+
+      return deadline === today;
+    });
+
+    if (todayTaskCountEl) {
+      todayTaskCountEl.textContent = todayEvents.length;
+    }
+
+    // 優先度「高」の件数
+    const highPriority = events.filter(
+      (event) =>
+        event.priority === "高" ||
+        (event.description &&
+          event.description.includes("優先度:高"))
     );
 
-    const highPriorityCountEl = document.getElementById("highPriorityCount");
-    if (highPriorityCountEl) highPriorityCountEl.textContent = highPriority.length;
-
+    if (highPriorityCountEl) {
+      highPriorityCountEl.textContent = highPriority.length;
+    }
   } catch (err) {
-    console.error("通信エラー:", err);
+    console.error("ダッシュボード更新エラー:", err);
   }
 }

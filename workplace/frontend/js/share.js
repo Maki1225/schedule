@@ -1,236 +1,213 @@
-import { auth, db, loginPromise } from "./firebase.js";
 
-import {
-  collection,
-  doc,
-  getDoc,
-  setDoc,
-  onSnapshot,
-  serverTimestamp
-} from "https://www.gstatic.com/firebasejs/13.0.0/firebase-firestore.js";
+const API_BASE_URL = window.API_BASE_URL;
 
-// 画面の要素を取得
-const groupNameInput = document.getElementById("groupName");
-const nicknameInput = document.getElementById("nickname");
-const inviteCodeInput = document.getElementById("inviteCode");
+document.addEventListener('DOMContentLoaded', () => {
+  const groupNameInput = document.getElementById('groupName');
+  const nicknameInput = document.getElementById('nickname');
+  const inviteCodeInput = document.getElementById('inviteCode');
+  const createButton = document.getElementById('createGroupButton');
+  const joinButton = document.getElementById('joinGroupButton');
+  const shareMessage = document.getElementById('shareMessage');
+  const groupInfo = document.getElementById('groupInfo');
 
-const createGroupButton = document.getElementById("createGroupButton");
-const joinGroupButton = document.getElementById("joinGroupButton");
+  document.getElementById('shareMenuButton')?.addEventListener('click', () => {
+    document.querySelectorAll('.view-section').forEach((view) => {
+      view.style.display = 'none';
+    });
 
-const shareMessage = document.getElementById("shareMessage");
-const groupInfo = document.getElementById("groupInfo");
-// メニューからグループ共有画面を開く
-document.getElementById("shareMenuButton").addEventListener("click", () => {
-  document.querySelectorAll(".view-section").forEach(section => {
-    section.style.display = "none";
+    const shareView = document.getElementById('shareView');
+    if (shareView) shareView.style.display = 'block';
+
+    loadGroups();
   });
 
-  document.getElementById("shareView").style.display = "block";
-});
+  async function apiRequest(path, options = {}) {
+    const response = await fetch(`${API_BASE_URL}${path}`, {
+      ...options,
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+    });
 
-// メッセージを表示する
-function showMessage(message) {
-  shareMessage.textContent = message;
-}
+    const data = await response.json().catch(() => ({}));
 
-// 招待コードを作る
-function generateInviteCode() {
-  const characters = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  const bytes = new Uint8Array(10);
-  crypto.getRandomValues(bytes);
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error('ログインの有効期限が切れています。再ログインしてください。');
+      }
 
-  return Array.from(
-    bytes,
-    byte => characters[byte % characters.length]
-  ).join("");
-}
+      throw new Error(data.error || data.message || '通信に失敗しました。');
+    }
 
-// グループ情報を画面に表示する
-function showGroup(groupId, groupName, inviteCode, nickname) {
-  groupInfo.replaceChildren();
+    return data;
+  }
 
-  const name = document.createElement("p");
-  name.textContent = `グループ名：${groupName}`;
-
-  const memberName = document.createElement("p");
-  memberName.textContent = `ニックネーム：${nickname}`;
-
-  const code = document.createElement("p");
-  code.textContent = `招待コード：${inviteCode}`;
-
-  const copyButton = document.createElement("button");
-  copyButton.textContent = "招待コードをコピー";
-
-  copyButton.addEventListener("click", async () => {
+  async function loadGroups() {
     try {
-      await navigator.clipboard.writeText(inviteCode);
-      showMessage("招待コードをコピーしたよ！");
+      const data = await apiRequest('/api/groups');
+      const groups = data.groups || [];
+
+      if (!groupInfo) return;
+
+      const list = document.createElement('div');
+      list.id = 'groupList';
+
+      const heading = document.createElement('h3');
+      heading.textContent = '参加中のグループ';
+      list.appendChild(heading);
+
+      if (groups.length === 0) {
+        const message = document.createElement('p');
+        message.textContent = '参加中のグループはありません。';
+        list.appendChild(message);
+      }
+
+      groups.forEach((group) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = group.name;
+
+        button.addEventListener('click', () => {
+          showGroup(group);
+
+          if (shareMessage) {
+            shareMessage.textContent = `${group.name} を選択しました。`;
+          }
+        });
+
+        list.appendChild(button);
+      });
+
+      const oldList = groupInfo.querySelector('#groupList');
+      if (oldList) oldList.remove();
+
+      groupInfo.prepend(list);
     } catch (error) {
-      showMessage(`招待コードを選択してコピーしてね：${inviteCode}`);
+      console.error('グループ一覧の取得エラー:', error);
+      if (shareMessage) shareMessage.textContent = error.message;
     }
-  });
-
-  groupInfo.append(name, memberName, code, copyButton);
-
-  // 現在のグループ情報をブラウザに保存
-  localStorage.setItem("studyPlannerGroupId", groupId);
-  localStorage.setItem("studyPlannerGroupName", groupName);
-  localStorage.setItem("studyPlannerInviteCode", inviteCode);
-  localStorage.setItem("studyPlannerNickname", nickname);
-
-  // グループ名の変更などをリアルタイムで反映
-  const groupRef = doc(db, "groups", groupId);
-
-  onSnapshot(groupRef, snapshot => {
-    if (snapshot.exists()) {
-      const data = snapshot.data();
-      name.textContent = `グループ名：${data.name}`;
-    }
-  }, error => {
-    console.error(error);
-  });
-}
-
-// グループ作成ボタン
-createGroupButton.addEventListener("click", async () => {
-  const groupName = groupNameInput.value.trim();
-
-  if (!groupName) {
-    showMessage("グループ名を入力してね。");
-    return;
   }
 
-  const nickname = prompt("あなたのニックネームを入力してね。");
-
-  if (!nickname || !nickname.trim()) {
-    showMessage("ニックネームを入力してね。");
-    return;
+  function refreshGroupData() {
+    if (typeof window.loadTasks === 'function') window.loadTasks();
+    if (typeof window.updateCalendar === 'function') window.updateCalendar();
+    if (typeof window.updateDashboard === 'function') window.updateDashboard();
   }
 
-  try {
-    createGroupButton.disabled = true;
-    showMessage("グループを作成しています……");
-
-    await loginPromise;
-
-    const user = auth.currentUser;
-    if (!user) {
-      throw new Error("ログインできていません。");
+  function showGroup(group, nickname = '') {
+    if (!group || group.id == null) {
+      throw new Error('グループ情報を取得できませんでした。');
     }
 
-    // グループを作成
-    const groupRef = doc(collection(db, "groups"));
-    const groupId = groupRef.id;
-    const inviteCode = generateInviteCode();
+    const name = group.name || 'グループ';
+    const code = group.invite_code || group.inviteCode || '';
 
-    await setDoc(groupRef, {
-      name: groupName,
-      ownerUid: user.uid,
-      createdAt: serverTimestamp()
-    });
+    localStorage.setItem('selectedGroupId', String(group.id));
+    localStorage.setItem('selectedGroupName', name);
 
-    // 招待コードを登録
-    await setDoc(doc(db, "inviteCodes", inviteCode), {
-      groupId: groupId,
-      groupName: groupName,
-      createdAt: serverTimestamp()
-    });
+    if (groupInfo) {
+      groupInfo.querySelectorAll(':scope > :not(#groupList)').forEach(el => el.remove());
 
-    // 作成した本人をメンバーに登録
-    await setDoc(doc(db, "groups", groupId, "members", user.uid), {
-      nickname: nickname.trim(),
-      inviteCode: inviteCode,
-      joinedAt: serverTimestamp()
-    });
+      const title = document.createElement('h3');
+      title.textContent = name;
+      groupInfo.appendChild(title);
 
-    showGroup(groupId, groupName, inviteCode, nickname.trim());
-    showMessage("グループを作成できたよ！");
-  } catch (error) {
-    console.error("グループ作成エラー:", error);
-    showMessage(`作成できませんでした：${error.message}`);
-  } finally {
-    createGroupButton.disabled = false;
-  }
-});
+      if (nickname) {
+        const nicknameText = document.createElement('p');
+        nicknameText.textContent = `ニックネーム：${nickname}`;
+        groupInfo.appendChild(nicknameText);
+      }
 
-// グループ参加ボタン
-joinGroupButton.addEventListener("click", async () => {
-  const nickname = nicknameInput.value.trim();
-  const inviteCode = inviteCodeInput.value.trim().toUpperCase();
+      const codeText = document.createElement('p');
+      codeText.textContent = `招待コード：${code || '取得できませんでした'}`;
+      groupInfo.appendChild(codeText);
 
-  if (!nickname || !inviteCode) {
-    showMessage("ニックネームと招待コードを入力してね。");
-    return;
-  }
+      if (code) {
+        const copyButton = document.createElement('button');
+        copyButton.type = 'button';
+        copyButton.textContent = '招待コードをコピー';
 
-  try {
-    joinGroupButton.disabled = true;
-    showMessage("グループを確認しています……");
+        copyButton.addEventListener('click', async () => {
+          try {
+            await navigator.clipboard.writeText(code);
+            if (shareMessage) shareMessage.textContent = '招待コードをコピーしました。';
+          } catch {
+            if (shareMessage) {
+              shareMessage.textContent = `招待コード：${code}（手動でコピーしてください）`;
+            }
+          }
+        });
 
-    await loginPromise;
-
-    const user = auth.currentUser;
-    if (!user) {
-      throw new Error("ログインできていません。");
+        groupInfo.appendChild(copyButton);
+      }
     }
 
-    // 招待コードからグループを探す
-    const inviteRef = doc(db, "inviteCodes", inviteCode);
-    const inviteSnapshot = await getDoc(inviteRef);
+    refreshGroupData();
+  }
 
-    if (!inviteSnapshot.exists()) {
-      showMessage("招待コードが見つかりません。入力を確認してね。");
+  createButton?.addEventListener('click', async () => {
+    const name = groupNameInput?.value.trim();
+
+    if (!name) {
+      if (shareMessage) shareMessage.textContent = 'グループ名を入力してください。';
       return;
     }
 
-    const inviteData = inviteSnapshot.data();
-    const groupId = inviteData.groupId;
-    const groupName = inviteData.groupName || "グループ";
+    createButton.disabled = true;
 
-    // メンバーとして登録
-    await setDoc(doc(db, "groups", groupId, "members", user.uid), {
-      nickname: nickname,
-      inviteCode: inviteCode,
-      joinedAt: serverTimestamp()
-    });
+    try {
+      const data = await apiRequest('/api/groups', {
+        method: 'POST',
+        body: JSON.stringify({ name }),
+      });
 
-    showGroup(groupId, groupName, inviteCode, nickname);
-    showMessage("グループに参加できたよ！");
-  } catch (error) {
-    console.error("グループ参加エラー:", error);
-    showMessage(`参加できませんでした：${error.message}`);
-  } finally {
-    joinGroupButton.disabled = false;
-  }
-});
+      showGroup(data.group);
 
-// 前回参加したグループを表示
-window.addEventListener("DOMContentLoaded", async () => {
-  const groupId = localStorage.getItem("studyPlannerGroupId");
-  const groupName = localStorage.getItem("studyPlannerGroupName");
-  const inviteCode = localStorage.getItem("studyPlannerInviteCode");
-  const nickname = localStorage.getItem("studyPlannerNickname");
+      if (shareMessage) shareMessage.textContent = 'グループを作成しました！';
 
-  if (!groupId || !groupName || !inviteCode || !nickname) {
-    return;
-  }
-
-  try {
-    await loginPromise;
-
-    const user = auth.currentUser;
-    if (!user) return;
-
-    // 保存済みのグループにまだ参加しているか確認
-    const memberRef = doc(db, "groups", groupId, "members", user.uid);
-    const memberSnapshot = await getDoc(memberRef);
-
-    if (memberSnapshot.exists()) {
-      showGroup(groupId, groupName, inviteCode, nickname);
-    } else {
-      showMessage("以前のグループ情報が見つかりません。招待コードで再参加してね。");
+      await loadGroups();
+    } catch (error) {
+      if (shareMessage) shareMessage.textContent = error.message;
+    } finally {
+      createButton.disabled = false;
     }
-  } catch (error) {
-    console.error("グループ情報の読み込みエラー:", error);
-  }
+  });
+
+  joinButton?.addEventListener('click', async () => {
+    const inviteCode = inviteCodeInput?.value.trim();
+    const nickname = nicknameInput?.value.trim();
+
+    if (!nickname) {
+      if (shareMessage) shareMessage.textContent = 'ニックネームを入力してください。';
+      return;
+    }
+
+    if (!inviteCode) {
+      if (shareMessage) shareMessage.textContent = '招待コードを入力してください。';
+      return;
+    }
+
+    joinButton.disabled = true;
+
+    try {
+      const data = await apiRequest('/api/groups/join', {
+        method: 'POST',
+        body: JSON.stringify({ inviteCode }),
+      });
+
+      showGroup(data.group, nickname);
+
+      if (shareMessage) {
+        shareMessage.textContent = data.message || 'グループに参加しました！';
+      }
+
+      await loadGroups();
+    } catch (error) {
+      if (shareMessage) shareMessage.textContent = error.message;
+    } finally {
+      joinButton.disabled = false;
+    }
+  });
 });

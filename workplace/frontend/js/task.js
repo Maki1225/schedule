@@ -1,35 +1,54 @@
 // 課題一覧の取得と表示
 async function loadTasks() {
   try {
-    const res = await fetch(`${API_BASE_URL}/api/events`, {
-      method: 'GET',
-      credentials: 'include',
-    });
+    const groupId = localStorage.getItem('selectedGroupId');
+
+    if (!groupId) {
+      renderTaskList([]);
+      return;
+    }
+
+    const res = await fetch(
+      `${API_BASE_URL}/api/events?groupId=${encodeURIComponent(groupId)}`,
+      {
+        method: 'GET',
+        credentials: 'include',
+      }
+    );
 
     if (res.status === 401) {
       window.location.href = 'login.html';
       return;
     }
 
-    if (!res.ok) return;
+    if (!res.ok) {
+      console.error('課題の取得に失敗しました:', res.status);
+      return;
+    }
 
-    const tasks = await res.json();
+    const data = await res.json();
+
+    const tasks = (data.events || []).filter(event =>
+      (event.description || '').startsWith('[課題]')
+    );
+
     renderTaskList(tasks);
   } catch (err) {
-    console.error('タスク取得エラー:', err);
+    console.error('課題取得エラー:', err);
   }
 }
 
-// 課題カードの安全な描写 (XSS対策)
+// 課題カードの表示
 function renderTaskList(tasks) {
-  // HTML側の id="taskList" に合わせる
   const container = document.getElementById('taskList');
   if (!container) return;
 
-  container.innerHTML = '';
+  container.replaceChildren();
 
   if (tasks.length === 0) {
-    container.innerHTML = '<p>課題はありません。</p>';
+    const message = document.createElement('p');
+    message.textContent = '課題はありません。';
+    container.appendChild(message);
     return;
   }
 
@@ -37,15 +56,17 @@ function renderTaskList(tasks) {
     const card = document.createElement('div');
     card.className = 'task-card';
 
-    const titleEl = document.createElement('h3');
-    titleEl.textContent = task.title;
+    const title = document.createElement('h3');
+    title.textContent = task.title;
 
-    const deadlineEl = document.createElement('p');
-    const deadlineText = task.end_time ? new Date(task.end_time).toLocaleDateString('ja-JP') : '未設定';
-    deadlineEl.textContent = `📅 期限: ${deadlineText}`;
+    const deadline = document.createElement('p');
+    deadline.textContent = `📅 期限: ${task.end_time
+      ? new Date(task.end_time).toLocaleDateString('ja-JP')
+      : '未設定'
+      }`;
 
-    card.appendChild(titleEl);
-    card.appendChild(deadlineEl);
+    card.appendChild(title);
+    card.appendChild(deadline);
     container.appendChild(card);
   });
 }
@@ -53,40 +74,79 @@ function renderTaskList(tasks) {
 // 課題の追加
 async function addTask(title, deadline, description) {
   try {
+    const groupId = localStorage.getItem('selectedGroupId');
+
+    if (!groupId) {
+      alert('先にグループを作成するか、グループに参加してください。');
+      return false;
+    }
+
+    const startTime = new Date();
+    const endTime = new Date(deadline);
+
+    if (Number.isNaN(endTime.getTime())) {
+      alert('提出期限を正しく入力してください。');
+      return false;
+    }
+
+    if (endTime <= startTime) {
+      alert('提出期限は現在より後の日時にしてください。');
+      return false;
+    }
+
     const res = await fetch(`${API_BASE_URL}/api/events`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+      },
       credentials: 'include',
       body: JSON.stringify({
-        title: title,
-        description: description || '課題',
-        start_time: new Date().toISOString(),
-        end_time: deadline ? new Date(deadline).toISOString() : new Date().toISOString(),
+        group_id: Number(groupId),
+        title,
+        description: `[課題] ${description || ''}`,
+        start_time: startTime.toISOString(),
+        end_time: endTime.toISOString(),
       }),
     });
 
-    if (res.ok) {
-      await loadTasks();
-      if (typeof updateDashboard === 'function') updateDashboard();
-      if (typeof updateCalendar === 'function') updateCalendar();
-    } else {
-      alert('課題の追加に失敗しました');
+    if (res.status === 401) {
+      window.location.href = 'login.html';
+      return false;
     }
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      alert(data.message || data.error || '課題の追加に失敗しました。');
+      return false;
+    }
+
+    await loadTasks();
+
+    if (typeof updateDashboard === 'function') {
+      updateDashboard();
+    }
+
+    if (typeof updateCalendar === 'function') {
+      updateCalendar();
+    }
+
+    return true;
   } catch (err) {
     console.error('通信エラー:', err);
+    alert('通信に失敗しました。');
+    return false;
   }
 }
 
+// 画面の初期設定
 document.addEventListener('DOMContentLoaded', () => {
   const addTaskButton = document.getElementById('addTaskButton');
   const taskModal = document.getElementById('taskModal');
   const closeModal = document.getElementById('closeModal');
   const saveTaskButton = document.getElementById('saveTask');
 
-  // 初期表示でタスク一覧を取得
   loadTasks();
 
-  // 1. 「＋ 課題追加」ボタンでモーダルを開く
   if (addTaskButton && taskModal) {
     addTaskButton.addEventListener('click', () => {
       taskModal.classList.add('active');
@@ -94,7 +154,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // 2. モーダルの「×」ボタンで閉じる
   if (closeModal && taskModal) {
     closeModal.addEventListener('click', () => {
       taskModal.classList.remove('active');
@@ -102,26 +161,35 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // 3. 「保存」ボタンをクリックしたときの処理
   if (saveTaskButton) {
     saveTaskButton.addEventListener('click', async () => {
-      const title = document.getElementById('taskTitle')?.value;
-      const deadline = document.getElementById('deadline')?.value;
-      const priority = document.getElementById('priority')?.value;
+      const titleInput = document.getElementById('taskTitle');
+      const deadlineInput = document.getElementById('deadline');
+      const priorityInput = document.getElementById('priority');
+
+      const title = titleInput?.value.trim();
+      const deadline = deadlineInput?.value;
+      const priority = priorityInput?.value;
 
       if (!title || !deadline) {
-        alert('課題名と提出期限を入力してください');
+        alert('課題名と提出期限を入力してください。');
         return;
       }
 
-      await addTask(title, deadline, `優先度:${priority}`);
+      const success = await addTask(
+        title,
+        deadline,
+        `優先度:${priority || '未設定'}`
+      );
 
-      // フォームのクリア & モーダルを閉じる
-      document.getElementById('taskTitle').value = '';
-      document.getElementById('deadline').value = '';
-      if (taskModal) {
-        taskModal.classList.remove('active');
-        taskModal.style.display = 'none';
+      if (success) {
+        if (titleInput) titleInput.value = '';
+        if (deadlineInput) deadlineInput.value = '';
+
+        if (taskModal) {
+          taskModal.classList.remove('active');
+          taskModal.style.display = 'none';
+        }
       }
     });
   }

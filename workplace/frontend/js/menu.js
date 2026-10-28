@@ -1,177 +1,273 @@
+
 // =======================================
 // menu.js
 // メニューと一覧表示の管理
 // =======================================
 
 document.addEventListener("DOMContentLoaded", () => {
+  const menuButton = document.getElementById("menuButton");
+  const menuPanel = document.getElementById("menuPanel");
 
-    const menuButton = document.getElementById("menuButton");
-    const menuPanel = document.getElementById("menuPanel");
+  const calendarButton = document.getElementById("calendarMenuButton");
+  const taskButton = document.getElementById("taskMenuButton");
+  const scheduleButton = document.getElementById("scheduleMenuButton");
+  const logoutButton = document.getElementById("logoutButton");
 
-    const calendarButton = document.getElementById("calendarMenuButton");
-    const taskButton = document.getElementById("taskMenuButton");
-    const scheduleButton = document.getElementById("scheduleMenuButton");
-    const logoutButton = document.getElementById("logoutButton");
+  // 表示エリア（ビュー）要素の取得
+  const calendarView = document.getElementById("calendarView");
+  const taskView = document.getElementById("taskView");
+  const scheduleView = document.getElementById("scheduleView");
+  const shareView = document.getElementById("shareView");
 
-    // 表示エリア（ビュー）要素の取得
-    const calendarView = document.getElementById("calendarView");
-    const taskView = document.getElementById("taskView");
-    const scheduleView = document.getElementById("scheduleView");
-
-    // =========================
-    // メニュー開閉ボタン
-    // =========================
+  // メニュー開閉
+  if (menuButton && menuPanel) {
     menuButton.addEventListener("click", () => {
-        menuPanel.classList.toggle("active");
+      menuPanel.classList.toggle("active");
+    });
+  }
+
+  // 画面切り替え
+  function switchView(targetView) {
+    // すべてのビューを非表示
+    const views = [
+      calendarView,
+      taskView,
+      scheduleView,
+      shareView
+    ];
+
+    views.forEach((view) => {
+      if (view) view.style.display = "none";
     });
 
-    // =========================
-    // 画面切り替え関数
-    // =========================
-    function switchView(targetView) {
-        // すべてのビューを非表示
-        calendarView.style.display = "none";
-        taskView.style.display = "none";
-        scheduleView.style.display = "none";
-
-        // 対象のビューのみ表示
-        targetView.style.display = "block";
-
-        // メニューパネルを閉じる
-        menuPanel.classList.remove("active");
+    // 対象のビューのみ表示
+    if (targetView) {
+      targetView.style.display = "block";
     }
 
-    // =========================
-    // 1. カレンダー表示ボタン
-    // =========================
+    // メニューパネルを閉じる
+    if (menuPanel) {
+      menuPanel.classList.remove("active");
+    }
+  }
+
+  // カレンダー表示
+  if (calendarButton) {
     calendarButton.addEventListener("click", () => {
-        switchView(calendarView);
+      switchView(calendarView);
 
-        // FullCalendarの崩れ防止（非表示から表示への変更時に再描画）
-        if (window.calendar) {
-            window.calendar.updateSize();
-        }
+      if (window.calendar) {
+        window.calendar.updateSize();
+      }
 
-        window.scrollTo({
-            top: 0,
-            behavior: "smooth"
-        });
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+      });
     });
+  }
 
-    // =========================
-    // 2. 課題一覧表示ボタン
-    // =========================
+  // 課題一覧表示
+  if (taskButton) {
     taskButton.addEventListener("click", () => {
-        switchView(taskView);
-        displayTasks();
+      switchView(taskView);
+      displayTasks();
     });
+  }
 
-    // =========================
-    // 3. 予定一覧表示ボタン
-    // =========================
+  // 予定一覧表示
+  if (scheduleButton) {
     scheduleButton.addEventListener("click", () => {
-        switchView(scheduleView);
-        displaySchedules();
+      switchView(scheduleView);
+      displaySchedules();
     });
+  }
 
-    // =========================
-    // ログアウト処理
-    // =========================
-    if (logoutButton) {
-        logoutButton.addEventListener("click", async () => {
-            const result = confirm("ログアウトしますか？");
+  // ログアウト
+  if (logoutButton) {
+    logoutButton.addEventListener("click", async () => {
+      const result = confirm("ログアウトしますか？");
+      if (!result) return;
 
-            if (!result) return;
+      try {
+        const res = await fetch(
+          `${window.API_BASE_URL}/api/auth/logout`,
+          {
+            method: "POST",
+            credentials: "include"
+          }
+        );
 
-            try {
-                const res = await fetch("http://localhost:5000/api/auth/logout", {
-                    method: "POST",
-                    credentials: "include"
-                });
-
-                if (res.ok) {
-                    alert("ログアウトしました");
-                    window.location.href = "login.html";
-                } else {
-                    alert("ログアウトに失敗しました");
-                }
-            } catch (error) {
-                console.error("ログアウトエラー:", error);
-                alert("サーバーとの通信に失敗しました");
-            }
-        });
-    }
-
+        if (res.ok) {
+          alert("ログアウトしました");
+          window.location.href = "login.html";
+        } else {
+          alert("ログアウトに失敗しました");
+        }
+      } catch (error) {
+        console.error("ログアウトエラー:", error);
+        alert("サーバーとの通信に失敗しました");
+      }
+    });
+  }
 });
 
-
-// =========================
+// =======================================
 // 課題一覧表示
-// =========================
-function displayTasks() {
-    const taskList = document.getElementById("taskList");
-    const tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+// =======================================
+async function displayTasks() {
+  const taskList = document.getElementById("taskList");
+  if (!taskList) return;
 
-    taskList.innerHTML = "";
+  const groupId = localStorage.getItem("selectedGroupId");
+  taskList.replaceChildren();
+
+  if (!groupId) {
+    taskList.textContent = "先にグループを作成するか、参加してください。";
+    return;
+  }
+
+  try {
+    const res = await fetch(
+      `${window.API_BASE_URL}/api/events?groupId=${encodeURIComponent(groupId)}`,
+      { credentials: "include" }
+    );
+
+    if (res.status === 401) {
+      window.location.href = "login.html";
+      return;
+    }
+
+    if (!res.ok) {
+      throw new Error("課題の取得に失敗しました。");
+    }
+
+    const data = await res.json();
+    const tasks = (data.events || []).filter(event =>
+      (event.description || "").startsWith("[課題]")
+    );
 
     if (tasks.length === 0) {
-        taskList.innerHTML = "<p>課題はありません。</p>";
-        return;
+      taskList.textContent = "課題はありません。";
+      return;
     }
 
     tasks.forEach(task => {
-        const div = document.createElement("div");
-        div.className = "task-card";
+      const card = document.createElement("div");
+      card.className = "task-card";
 
-        div.innerHTML = `
-            <h3>${escapeHtmlMenu(task.title)}</h3>
-            <p>📅 提出期限：${escapeHtmlMenu(task.deadline)}</p>
-            <p>📝 課題をする日：${escapeHtmlMenu(task.studyDate || "未設定")}</p>
-            <p>⏰ 必要時間：${escapeHtmlMenu(String(task.studyTime || 0))}時間</p>
-            <p>⭐ 優先順位：${escapeHtmlMenu(task.priority)}</p>
-        `;
+      const title = document.createElement("h3");
+      title.textContent = task.title || "";
 
-        taskList.appendChild(div);
+      const deadline = document.createElement("p");
+      deadline.textContent = `📅 提出期限：${task.end_time
+        ? new Date(task.end_time).toLocaleString("ja-JP")
+        : "未設定"
+        }`;
+
+      card.append(title, deadline);
+      taskList.appendChild(card);
     });
+  } catch (error) {
+    console.error("課題一覧の取得エラー:", error);
+    taskList.textContent = "課題一覧を取得できませんでした。";
+  }
 }
 
-
-// =========================
+// =======================================
 // 予定一覧表示
-// =========================
-function displaySchedules() {
-    const scheduleList = document.getElementById("scheduleList");
-    const schedules = JSON.parse(localStorage.getItem("schedules")) || [];
+// =======================================
+async function displaySchedules() {
+  const scheduleList = document.getElementById("scheduleList");
+  if (!scheduleList) return;
 
-    scheduleList.innerHTML = "";
+  const groupId = localStorage.getItem("selectedGroupId");
+  scheduleList.replaceChildren();
 
-    if (schedules.length === 0) {
-        scheduleList.innerHTML = "<p>予定はありません。</p>";
-        return;
+  if (!groupId) {
+    scheduleList.textContent = "先にグループを作成するか、参加してください。";
+    return;
+  }
+
+  try {
+    const res = await fetch(
+      `${window.API_BASE_URL}/api/events?groupId=${encodeURIComponent(groupId)}`,
+      { credentials: "include" }
+    );
+
+    if (res.status === 401) {
+      window.location.href = "login.html";
+      return;
     }
 
-    schedules.forEach(schedule => {
-        const div = document.createElement("div");
-        div.className = "schedule-card";
+    if (!res.ok) {
+      throw new Error("予定の取得に失敗しました。");
+    }
 
-        div.innerHTML = `
-            <h3>${escapeHtmlMenu(schedule.title)}</h3>
-            <p>📅 日付：${escapeHtmlMenu(schedule.date)}</p>
-            <p>🕐 時間：${escapeHtmlMenu(schedule.startTime)} ～ ${escapeHtmlMenu(schedule.endTime)}</p>
-            ${schedule.memo ? `<p>📝 メモ：${escapeHtmlMenu(schedule.memo)}</p>` : ""}
-        `;
+    const data = await res.json();
+    const events = (data.events || []).filter(event =>
+      (event.description || "").startsWith("[予定]")
+    );
 
-        scheduleList.appendChild(div);
+    if (events.length === 0) {
+      scheduleList.textContent = "予定はありません。";
+      return;
+    }
+
+    events.forEach(event => {
+      const card = document.createElement("div");
+      card.className = "schedule-card";
+
+      const title = document.createElement("h3");
+      title.textContent = event.title || "";
+
+      const date = document.createElement("p");
+      date.textContent = `📅 日付：${event.start_time
+        ? new Date(event.start_time).toLocaleDateString("ja-JP", {
+          timeZone: "Asia/Tokyo"
+        })
+        : "未設定"
+        }`;
+
+      const time = document.createElement("p");
+      if (event.start_time && event.end_time) {
+        const start = new Date(event.start_time).toLocaleTimeString(
+          "ja-JP",
+          {
+            hour: "2-digit",
+            minute: "2-digit",
+            timeZone: "Asia/Tokyo"
+          }
+        );
+
+        const end = new Date(event.end_time).toLocaleTimeString(
+          "ja-JP",
+          {
+            hour: "2-digit",
+            minute: "2-digit",
+            timeZone: "Asia/Tokyo"
+          }
+        );
+
+        time.textContent = `🕐 ${start} ～ ${end}`;
+      }
+
+      card.append(title, date, time);
+      scheduleList.appendChild(card);
     });
+  } catch (error) {
+    console.error("予定一覧の取得エラー:", error);
+    scheduleList.textContent = "予定一覧を取得できませんでした。";
+  }
 }
 
-
-// =========================
+// =======================================
 // HTMLエスケープ関数
-// =========================
+// =======================================
 function escapeHtmlMenu(text) {
-    if (!text) return "";
-    const div = document.createElement("div");
-    div.textContent = text;
-    return div.innerHTML;
+  if (!text) return "";
+
+  const div = document.createElement("div");
+  div.textContent = text;
+  return div.innerHTML;
 }
