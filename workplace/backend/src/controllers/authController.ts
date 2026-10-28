@@ -2,30 +2,30 @@ import { OAuth2Client } from 'google-auth-library'
 import { AppContext } from '../types/hono'
 import { setCookie, deleteCookie } from 'hono/cookie'
 import { sign } from 'hono/jwt'
-import { UserModel } from '../models/userModel'
+import { UserModel } from '../models/authModel'
+import { getJwtSecret, isProduction } from '../config/env'
 
-const googleClient = new OAuth2Client(
-  process.env.GOOGLE_CLIENT_ID,
-  process.env.GOOGLE_CLIENT_SECRET,
-  'postmessage' // popup（Code Client）認証用のリダイレクト識別子
-)
+// リクエストごとに生成する（共有インスタンスだと setCredentials で他ユーザーの資格情報が混ざるため）
+const createGoogleClient = () =>
+  new OAuth2Client(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    'postmessage' // popup（Code Client）認証用のリダイレクト識別子
+  )
 
-const getJwtSecret = (): string => {
-  const secret = process.env.JWT_SECRET
-  if (!secret) {
-    throw new Error('FATAL: JWT_SECRET environment variable is not set.')
-  }
-  return secret
-}
+const COOKIE_MAX_AGE = 60 * 60 * 24 // 24時間
 
 export const AuthController = {
   async googleLogin(c: AppContext) {
     try {
-      const { code } = await c.req.json()
+      const body = await c.req.json().catch(() => ({}))
+      const code = body?.code
 
-      if (!code) {
+      if (!code || typeof code !== 'string') {
         return c.json({ error: '認可コードが必要です' }, 400)
       }
+
+      const googleClient = createGoogleClient()
 
       // 1. 認可コードを各種トークン（Access / Refresh / ID Token）と交換
       const { tokens } = await googleClient.getToken(code)
@@ -73,17 +73,17 @@ export const AuthController = {
         {
           id: user.id,
           email: user.email,
-          exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24, // 24時間
+          exp: Math.floor(Date.now() / 1000) + COOKIE_MAX_AGE,
         },
         getJwtSecret()
       )
 
       setCookie(c, 'token', token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: isProduction(),
         sameSite: 'Lax',
         path: '/',
-        maxAge: 60 * 60 * 24,
+        maxAge: COOKIE_MAX_AGE,
       })
 
       return c.json({
@@ -107,7 +107,7 @@ export const AuthController = {
   async logout(c: AppContext) {
     deleteCookie(c, 'token', {
       path: '/',
-      secure: process.env.NODE_ENV === 'production',
+      secure: isProduction(),
       sameSite: 'Lax',
     })
     return c.json({ message: 'ログアウトしました' })
