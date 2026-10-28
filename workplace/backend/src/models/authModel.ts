@@ -12,6 +12,15 @@ export interface User {
 }
 
 export const UserModel = {
+  async findById(userId: number) {
+    const [user] = await sql`
+      SELECT id, name, email, picture, created_at
+      FROM users
+      WHERE id = ${userId}
+    `
+    return user
+  },
+
   async findByGoogleId(googleId: string): Promise<User | null> {
     const result = await sql`SELECT * FROM users WHERE google_id = ${googleId}`
     if (result.length === 0) return null
@@ -36,6 +45,18 @@ export const UserModel = {
       RETURNING *
     `
     return result[0] as User
+  },
+
+  async updateProfile(userId: number, data: { name?: string; picture?: string }) {
+    const [updatedUser] = await sql`
+      UPDATE users
+      SET
+        name = COALESCE(${data.name}, name),
+        picture = COALESCE(${data.picture}, picture)
+      WHERE id = ${userId}
+      RETURNING id, name, email, picture, created_at
+    `
+    return updatedUser
   },
 
   async updateGoogleTokens(
