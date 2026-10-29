@@ -81,35 +81,93 @@ document.addEventListener("DOMContentLoaded", () => {
       switchView(scheduleView);
       displaySchedules();
     });
-  }
 
-  // ログアウト
-  if (logoutButton) {
-    logoutButton.addEventListener("click", async () => {
-      const result = confirm("ログアウトしますか？");
-      if (!result) return;
+    // =========================
+    // ログアウト処理
+    // =========================
+    if (logoutButton) {
+        logoutButton.addEventListener("click", async () => {
+            const result = confirm("ログアウトしますか？");
 
-      try {
-        const res = await fetch(
-          `${window.API_BASE_URL}/api/auth/logout`,
-          {
-            method: "POST",
-            credentials: "include"
-          }
-        );
+            if (!result) return;
 
-        if (res.ok) {
-          alert("ログアウトしました");
-          window.location.href = "login.html";
-        } else {
-          alert("ログアウトに失敗しました");
-        }
-      } catch (error) {
-        console.error("ログアウトエラー:", error);
-        alert("サーバーとの通信に失敗しました");
-      }
-    });
-  }
+            try {
+                const res = await fetch("/api/auth/logout", {
+                    method: "POST",
+                    credentials: "include"
+                });
+
+                if (res.ok) {
+                    alert("ログアウトしました");
+                    window.location.href = "login.html";
+                } else {
+                    alert("ログアウトに失敗しました");
+                }
+            } catch (error) {
+                console.error("ログアウトエラー:", error);
+                alert("サーバーとの通信に失敗しました");
+            }
+        });
+    }
+
+    // =========================
+    // プロフィール画面
+    // =========================
+
+    const profileButton =
+        document.getElementById("profileMenuButton");
+
+    if (profileButton) {
+
+        profileButton.addEventListener("click", () => {
+
+            window.location.href = "profile.html";
+
+        });
+
+    }
+
+    // =========================
+    // ログアウト
+    // =========================
+
+    if (logoutButton) {
+
+        logoutButton.addEventListener("click", async () => {
+
+            const result = confirm("ログアウトしますか？");
+
+            if (!result) {
+                return;
+            }
+
+            try {
+
+                const res = await fetch("/api/auth/logout", {
+                    method: "POST",
+                    credentials: "include"
+                });
+
+                if (!res.ok) {
+                    alert("ログアウトに失敗しました");
+                    return;
+                }
+
+                // ログイン画面へ移動
+                window.location.replace("login.html");
+
+            } catch (error) {
+
+                console.error("ログアウトエラー:", error);
+
+                alert("サーバーとの通信に失敗しました");
+
+            }
+
+        });
+
+    }
+
 });
 
 // =======================================
@@ -261,13 +319,17 @@ async function displaySchedules() {
   }
 }
 
-// =======================================
-// HTMLエスケープ関数
-// =======================================
-function escapeHtmlMenu(text) {
-  if (!text) return "";
 
-  const div = document.createElement("div");
-  div.textContent = text;
-  return div.innerHTML;
+
+// =========================
+// HTMLエスケープ
+// =========================
+
+function escapeHtmlMenu(text){
+
+    const div =
+        document.createElement("div");
+
+    div.textContent = text;
+    return div.innerHTML;
 }
