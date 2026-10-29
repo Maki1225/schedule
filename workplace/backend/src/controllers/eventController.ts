@@ -1,6 +1,5 @@
 import { AppContext } from '../types/hono'
 import { sql } from '../config/db'
-import { groupModel } from '../models/groupModel'
 import { CreateEventInput, UpdateEventInput } from '../validators/eventValidators'
 
 export const EventController = {
@@ -16,7 +15,10 @@ export const EventController = {
       }
 
       // グループ所属権限の確認
-      if (!(await groupModel.isMember(group_id, Number(user.id)))) {
+      const [membership] = await sql`
+        SELECT role FROM group_members WHERE user_id = ${user.id} AND group_id = ${group_id}
+      `
+      if (!membership) {
         return c.json({ error: 'このグループに予定を作成する権限がありません' }, 403)
       }
 
@@ -41,13 +43,16 @@ export const EventController = {
   async getByGroup(c: AppContext) {
     try {
       const user = c.get('jwtPayload')
-      const groupId = Number(c.req.query('groupId'))
+      const groupId = c.req.query('groupId')
 
-      if (!Number.isInteger(groupId) || groupId <= 0) {
-        return c.json({ error: 'groupId が指定されていない、または不正です' }, 400)
+      if (!groupId) {
+        return c.json({ error: 'groupId が指定されていません' }, 400)
       }
 
-      if (!(await groupModel.isMember(groupId, Number(user.id)))) {
+      const [membership] = await sql`
+        SELECT role FROM group_members WHERE user_id = ${user.id} AND group_id = ${groupId}
+      `
+      if (!membership) {
         return c.json({ error: 'このグループの予定を閲覧する権限がありません' }, 403)
       }
 
