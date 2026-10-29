@@ -7,10 +7,6 @@ import { Env } from './src/types/hono'
 import eventRoutes from './src/routes/eventRoutes'
 import authRoutes from './src/routes/authRoutes'
 import groupRoutes from './src/routes/groupRoutes'
-import userRoutes from './src/routes/userRoutes'
-
-// 起動時に JWT_SECRET の未設定・短すぎる値を検知して即失敗させる
-getJwtSecret()
 
 const app = new Hono<Env>()
 
@@ -81,7 +77,6 @@ app.onError((err, c) => {
 app.route('/api/events', eventRoutes)
 app.route('/api/auth', authRoutes)
 app.route('/api/groups', groupRoutes)
-app.route('/api/users', userRoutes)
 
 // 6. ローカル開発用サーバー起動
 if (process.env.NODE_ENV !== 'production') {

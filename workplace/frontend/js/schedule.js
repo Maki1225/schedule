@@ -1,35 +1,73 @@
+
+
 // 予定の追加処理
 async function addSchedule(title, date, startTime, endTime, memo) {
   try {
-    // タイムゾーン（+09:00）を考慮したISO文字列を作成
-    // 例: "2026-10-01T10:00:00+09:00"
+    const groupId = localStorage.getItem('selectedGroupId');
+
+    if (!groupId) {
+      alert('先にグループを作成するか、グループに参加してください。');
+      return false;
+    }
+
+    // 日本時間（+09:00）で日時を作成
     const startIso = `${date}T${startTime}:00+09:00`;
     const endIso = `${date}T${endTime}:00+09:00`;
 
+    const startDate = new Date(startIso);
+    const endDate = new Date(endIso);
+
+    if (
+      Number.isNaN(startDate.getTime()) ||
+      Number.isNaN(endDate.getTime()) ||
+      endDate <= startDate
+    ) {
+      alert('終了時刻は開始時刻より後に設定してください。');
+      return false;
+    }
+
     const res = await fetch(`${API_BASE_URL}/api/events`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+      },
       credentials: 'include',
       body: JSON.stringify({
-        title: title,
-        description: memo || '予定',
-        start_time: new Date(startIso).toISOString(), // または startIso そのまま
-        end_time: new Date(endIso).toISOString(),
+        group_id: Number(groupId),
+        title,
+        description: `[予定] ${memo || ''}`,
+        start_time: startDate.toISOString(),
+        end_time: endDate.toISOString(),
       }),
     });
 
-    if (res.ok) {
-      if (typeof updateDashboard === 'function') updateDashboard();
-      if (typeof updateCalendar === 'function') updateCalendar();
-      return true; // 成功を呼び出し元に伝える
-    } else {
-      const errorData = await res.json().catch(() => ({}));
-      alert(errorData.message || '予定の追加に失敗しました');
-      return false; // 失敗を伝える
+    if (res.status === 401) {
+      window.location.href = 'login.html';
+      return false;
     }
+
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      alert(
+        errorData.message ||
+        errorData.error ||
+        '予定の追加に失敗しました。'
+      );
+      return false;
+    }
+
+    if (typeof updateDashboard === 'function') {
+      updateDashboard();
+    }
+
+    if (typeof updateCalendar === 'function') {
+      updateCalendar();
+    }
+
+    return true;
   } catch (err) {
     console.error('予定追加エラー:', err);
-    alert('通信エラーが発生しました');
+    alert('通信エラーが発生しました。');
     return false;
   }
 }
@@ -40,17 +78,22 @@ document.addEventListener('DOMContentLoaded', () => {
   const closeScheduleModal = document.getElementById('closeScheduleModal');
   const saveScheduleButton = document.getElementById('saveSchedule');
 
-  // フォームのリセット関数
+  // フォームをリセットする
   const resetScheduleForm = () => {
-    document.getElementById('scheduleTitle').value = '';
-    document.getElementById('scheduleDate').value = '';
-    document.getElementById('scheduleStartTime').value = '';
-    document.getElementById('scheduleEndTime').value = '';
-    const memoEl = document.getElementById('scheduleMemo');
-    if (memoEl) memoEl.value = '';
+    const title = document.getElementById('scheduleTitle');
+    const date = document.getElementById('scheduleDate');
+    const start = document.getElementById('scheduleStartTime');
+    const end = document.getElementById('scheduleEndTime');
+    const memo = document.getElementById('scheduleMemo');
+
+    if (title) title.value = '';
+    if (date) date.value = '';
+    if (start) start.value = '';
+    if (end) end.value = '';
+    if (memo) memo.value = '';
   };
 
-  // 1. 「＋ 予定追加」ボタンでモーダルを開く
+  // 「＋ 予定追加」でモーダルを開く
   if (addScheduleButton && scheduleModal) {
     addScheduleButton.addEventListener('click', () => {
       scheduleModal.classList.add('active');
@@ -58,7 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // 2. 「×」ボタンで閉じる
+  // 「×」でモーダルを閉じる
   if (closeScheduleModal && scheduleModal) {
     closeScheduleModal.addEventListener('click', () => {
       scheduleModal.classList.remove('active');
@@ -67,7 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // 3. 「保存」ボタンの処理
+  // 「保存」ボタン
   if (saveScheduleButton) {
     saveScheduleButton.addEventListener('click', async () => {
       const title = document.getElementById('scheduleTitle')?.value.trim();
@@ -77,21 +120,26 @@ document.addEventListener('DOMContentLoaded', () => {
       const memo = document.getElementById('scheduleMemo')?.value;
 
       if (!title || !date || !startTime || !endTime) {
-        alert('予定名、日付、時間をすべて入力してください');
+        alert('予定名、日付、開始時刻、終了時刻を入力してください。');
         return;
       }
 
-      // 開始時刻より終了時刻が前になっていないかチェック
-      if (`${date}T${startTime}` >= `${date}T${endTime}`) {
-        alert('終了時刻は開始時刻より後に設定してください');
+      if (startTime >= endTime) {
+        alert('終了時刻は開始時刻より後に設定してください。');
         return;
       }
 
-      // 追加APIを実行し、成功した場合のみフォームを閉じる
-      const success = await addSchedule(title, date, startTime, endTime, memo);
+      const success = await addSchedule(
+        title,
+        date,
+        startTime,
+        endTime,
+        memo
+      );
 
       if (success) {
         resetScheduleForm();
+
         if (scheduleModal) {
           scheduleModal.classList.remove('active');
           scheduleModal.style.display = 'none';
