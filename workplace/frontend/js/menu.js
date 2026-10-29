@@ -89,14 +89,65 @@ document.addEventListener("DOMContentLoaded", () => {
       const result = confirm("ログアウトしますか？");
       if (!result) return;
 
-      try {
-        const res = await fetch(
-          `${window.API_BASE_URL}/api/auth/logout`,
-          {
-            method: "POST",
-            credentials: "include"
+// ログアウト
+  if (logoutButton) {
+
+      logoutButton.addEventListener("click", async () => {
+          const result = confirm("ログアウトしますか？");
+          if (!result) return;
+
+          try {
+              const res = await fetch(
+                  `${window.API_BASE_URL}/api/auth/logout`,
+                  {
+                      method: "POST",
+                      credentials: "include"
+                  }
+              );
+              if (res.ok) {
+                  alert("ログアウトしました");
+                  window.location.href = "login.html";
+              } else {
+                  alert("ログアウトに失敗しました");
+              }
+          } catch (error) {
+              console.error("ログアウトエラー:", error);
+              alert("サーバーとの通信に失敗しました");
           }
-        );
+      });
+  }
+
+            if (!result) {
+                return;
+            }
+
+            try {
+
+                const res = await fetch("/api/auth/logout", {
+                    method: "POST",
+                    credentials: "include"
+                });
+
+                if (!res.ok) {
+                    alert("ログアウトに失敗しました");
+                    return;
+                }
+
+                // ログイン画面へ移動
+                window.location.replace("login.html");
+
+            } catch (error) {
+
+                console.error("ログアウトエラー:", error);
+
+                alert("サーバーとの通信に失敗しました");
+
+            }
+
+        });
+
+    }
+>>>>>>> b6e3473 (Merge pull request #51 from hackathon-SAI/profile)
 
         if (res.ok) {
           alert("ログアウトしました");
