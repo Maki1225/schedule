@@ -37,6 +37,14 @@ async addMember(groupId: number, userId: number, role: string = 'member') {
     return member
 },
 
+  // グループ所属確認
+async isMember(groupId: number, userId: number): Promise<boolean> {
+    const rows = await sql`
+    SELECT 1 FROM group_members WHERE group_id = ${groupId} AND user_id = ${userId}
+    `
+    return rows.length > 0
+},
+
   // 4. ユーザーが所属するグループ一覧の取得
 async getUserGroups(userId: number) {
     return await sql`
