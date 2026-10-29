@@ -6,12 +6,11 @@
   <title>ログイン - Schedule App</title>
   <link rel="stylesheet" href="css/auth.css">
 
-  <!-- 1. Google SDK -->
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <!-- 2. 共通認証スクリプト -->
-  <script src="js/common-auth.js" defer></script>
-  <!-- 3. ログイン画面用スクリプト -->
-  <script src="js/login.js" defer></script>
+  <!-- Googleログイン -->
+  <script src="https://accounts.google.com/gsi/client"
+          async defer></script>
+  <script>window.API_BASE_URL = "/";</script>
+<script src="js/login.js" defer></script>
 </head>
 <body>
 
