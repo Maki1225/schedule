@@ -1,8 +1,8 @@
 import 'dotenv/config'
-import { Hono, Context } from 'hono'
+import { Hono } from 'hono'
 import { serve } from '@hono/node-server'
-import { secureHeaders, cors, rateLimiter } from './src/middleware'
-import { getAllowedOrigins, getJwtSecret, isProduction } from './src/config/env'
+import { secureHeaders } from 'hono/secure-headers'
+import { cors } from 'hono/cors'
 import { Env } from './src/types/hono'
 import eventRoutes from './src/routes/eventRoutes'
 import authRoutes from './src/routes/authRoutes'
@@ -11,74 +11,55 @@ import groupRoutes from './src/routes/groupRoutes'
 const app = new Hono<Env>()
 
 // 1. セキュリティヘッダー
-// Google ポップアップ認証のため COOP は same-origin-allow-popups を使用
 app.use(
   '*',
   secureHeaders({
-    crossOriginOpenerPolicy: 'same-origin-allow-popups',
+    crossOriginOpenerPolicy: 'unsafe-none',
   })
 )
 
-// 2. CORS設定（許可リストに完全一致したオリジンのみ許可。*.vercel.app のワイルドカードは廃止）
-const allowedOrigins = getAllowedOrigins()
+// 2. CORS設定
 app.use(
   '/api/*',
   cors({
-    origin: (origin) => (origin && allowedOrigins.includes(origin) ? origin : null),
+    origin: (origin) => {
+      const allowedOrigins = [
+        'http://127.0.0.1:5500',
+        'http://localhost:5500',
+        'http://127.0.0.1:5000',
+        'http://localhost:5000',
+        'https://schedule-sai.vercel.app',
+        'https://schedule-backend-navy.vercel.app',
+      ]
+      if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+        return origin || '*'
+      }
+      return null
+    },
     credentials: true,
     allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization'],
   })
 )
 
-// 3. レート制限
-const clientKey = (c: Context) =>
-  c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ||
-  c.req.header('x-real-ip') ||
-  'unknown'
-
-// API 全体: 1分あたり100リクエスト
-app.use(
-  '/api/*',
-  rateLimiter({
-    windowMs: 60 * 1000,
-    limit: 100,
-    standardHeaders: 'draft-6',
-    keyGenerator: clientKey,
-    message: { error: 'リクエストが多すぎます。しばらくしてから再度お試しください' },
-  })
-)
-
-// 認証系: 15分あたり20リクエスト（総当たり対策）
-app.use(
-  '/api/auth/google',
-  rateLimiter({
-    windowMs: 15 * 60 * 1000,
-    limit: 20,
-    standardHeaders: 'draft-6',
-    keyGenerator: clientKey,
-    message: { error: '認証リクエストが多すぎます。しばらくしてから再度お試しください' },
-  })
-)
-
-// 4. エラーハンドラ（内部エラーの詳細はクライアントへ返さない）
+// 3. エラーハンドラ
 app.onError((err, c) => {
   console.error('★ サーバーエラー詳細:', err)
   return c.json(
     {
       error: 'サーバー内部エラーが発生しました',
-      ...(isProduction() ? {} : { message: err.message }),
+      message: err.message,
     },
     500
   )
 })
 
-// 5. APIルートの登録
+// 4. APIルートの登録
 app.route('/api/events', eventRoutes)
 app.route('/api/auth', authRoutes)
 app.route('/api/groups', groupRoutes)
 
-// 6. ローカル開発用サーバー起動
+// 5. ローカル開発用サーバー起動
 if (process.env.NODE_ENV !== 'production') {
   const port = Number(process.env.PORT) || 5000
   serve(
