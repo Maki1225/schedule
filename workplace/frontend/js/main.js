@@ -1,4 +1,4 @@
-
+const API_BASE_URL = window.API_BASE_URL;
 document.addEventListener("DOMContentLoaded", async () => {
   // ログイン確認
   if (typeof requireAuth === "function") {

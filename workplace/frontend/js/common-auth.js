@@ -1,30 +1,44 @@
-window.API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-  ? 'http://localhost:5000'
-  : 'https://schedule-backend-navy.vercel.app';
 
-// window.API_BASE_URL でも単体の API_BASE_URL でアクセスできるように定義
-const API_BASE_URL = window.API_BASE_URL;
+// 全画面共通の認証確認関数
+async function requireAuth() {
 
-// ログイン状態のチェック（ユーザー情報を返す）
-async function checkAuth(baseUrl = window.API_BASE_URL) {
+  // 認証不要の公開ページ
+  const publicPages = [
+    "index.html",
+    "login.html",
+    "privacy-policy.html",
+    "terms-of-service.html"
+  ];
+
+  // 現在のファイル名を取得
+  const currentPage =
+    window.location.pathname.split("/").pop() || "index.html";
+
+  // 公開ページでは認証チェックを行わない
+  if (publicPages.includes(currentPage)) {
+    return null;
+  }
+
   try {
-    const res = await fetch(`${baseUrl}/api/auth/me`, {
-      method: 'GET',
-      credentials: 'include',
+    const res = await fetch("/api/auth/me", {
+      method: "GET",
+      credentials: "include"
     });
 
-    if (res.status === 401) {
-      // 未ログイン状態（正常なレスポンスとして扱う）
+    if (!res.ok) {
+      // 未ログインならログイン画面へ
+      window.location.replace("login.html");
       return null;
     }
 
-    if (res.ok) {
-      const data = await res.json();
-      return data.user;
-    }
-    return null;
+    const data = await res.json();
+
+    return data.user;
+
   } catch (err) {
-    console.error('認証チェック失敗:', err);
+    console.error("認証チェックエラー:", err);
+
+    window.location.replace("login.html");
     return null;
   }
 }
