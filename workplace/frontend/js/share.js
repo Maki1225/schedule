@@ -19,6 +19,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (shareView) shareView.style.display = 'block';
 
     loadGroups();
+    const menuPanel = document.getElementById('menuPanel');
+    if (menuPanel) {
+      menuPanel.classList.remove('active');
+    }
   });
 
   async function apiRequest(path, options = {}) {
