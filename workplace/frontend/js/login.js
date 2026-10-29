@@ -1,3 +1,6 @@
+// APIベースURL（本番環境用）
+const API_BASE_URL = "http://schedule-backend-navy.vercel.app";
+
 let codeClient;
 
 // Google OAuth クライアントの初期化
