@@ -1,0 +1,100 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>プロフィール | Study Planner</title>
+
+    <link rel="stylesheet" href="css/profile.css">
+</head>
+
+<body>
+
+    <header class="header">
+        <h1>Study Planner</h1>
+
+        <a href="calendar.html" class="back-link">
+            カレンダーに戻る
+        </a>
+    </header>
+
+    <main class="profile-container">
+
+        <section class="profile-card">
+
+            <h2>プロフィール</h2>
+
+            <p class="description">
+                アカウント情報の確認と編集ができます。
+            </p>
+
+            <div class="profile-image-area">
+
+                <img
+                    id="userPicture"
+                    src="images/default-avatar.svg"
+                    alt="プロフィール画像"
+                    referrerpolicy="no-referrer"
+                >
+
+            </div>
+
+            <form id="profileForm">
+
+                <div class="form-group">
+
+                    <label for="userName">
+                        名前
+                    </label>
+
+                    <input
+                        type="text"
+                        id="userName"
+                        maxlength="100"
+                        required
+                    >
+
+                </div>
+
+                <div class="form-group">
+
+                    <label for="userEmail">
+                        メールアドレス
+                    </label>
+
+                    <input
+                        type="email"
+                        id="userEmail"
+                        readonly
+                    >
+
+                    <small>
+                        Googleアカウントのメールアドレスは
+                        ここでは変更できません。
+                    </small>
+
+                </div>
+
+                <p id="profileMessage" role="status"
+                   aria-live="polite"></p>
+
+                <button type="submit" id="saveProfile">
+                    変更を保存
+                </button>
+
+            </form>
+
+        </section>
+
+    </main>
+
+    <script src="js/common-auth.js"></script>
+    <script src="js/profile.js"></script>
+
+</body>
+
+</html>

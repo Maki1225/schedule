@@ -103,6 +103,23 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // =========================
+    // プロフィール画面
+    // =========================
+
+    const profileButton =
+        document.getElementById("profileMenuButton");
+
+    if (profileButton) {
+
+        profileButton.addEventListener("click", () => {
+
+            window.location.href = "profile.html";
+
+        });
+
+    }
+
+    // =========================
     // ログアウト
     // =========================
 
