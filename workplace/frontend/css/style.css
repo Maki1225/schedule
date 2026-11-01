@@ -298,6 +298,16 @@ header {
     margin-top: 7px;
 }
 
+.event-audit-metadata {
+    margin-top: 10px;
+    color: #737585;
+    font-size: 12px;
+}
+
+.event-audit-metadata p {
+    margin: 3px 0 0;
+}
+
 .task-buttons {
     display: flex;
     gap: 10px;

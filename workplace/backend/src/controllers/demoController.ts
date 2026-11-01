@@ -135,11 +135,16 @@ export const DemoController = {
       ORDER BY g.id DESC
     `
     const events = await sql`
-      SELECT e.*, g.name AS group_name, u.name AS creator_name
+      SELECT
+        e.*,
+        g.name AS group_name,
+        creator.name AS creator_name,
+        editor.name AS editor_name
       FROM events e
       JOIN groups g ON g.id = e.group_id
       JOIN group_members gm ON gm.group_id = g.id
-      LEFT JOIN users u ON u.id = e.created_by
+      LEFT JOIN users creator ON creator.id = e.created_by
+      LEFT JOIN users editor ON editor.id = e.updated_by
       WHERE gm.user_id = ${user.id}
       ORDER BY e.start_time ASC
     `
@@ -231,10 +236,15 @@ export const DemoController = {
       ORDER BY gm.role, u.name
     `
     const events = await sql`
-      SELECT e.*, g.name AS group_name, u.name AS creator_name
+      SELECT
+        e.*,
+        g.name AS group_name,
+        creator.name AS creator_name,
+        editor.name AS editor_name
       FROM events e
       JOIN groups g ON g.id = e.group_id
-      LEFT JOIN users u ON u.id = e.created_by
+      LEFT JOIN users creator ON creator.id = e.created_by
+      LEFT JOIN users editor ON editor.id = e.updated_by
       WHERE e.group_id = ${group.id}
       ORDER BY e.start_time ASC
     `

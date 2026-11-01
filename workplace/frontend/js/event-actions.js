@@ -117,6 +117,36 @@ window.EventActions = (() => {
     return button;
   }
 
+  function appendAuditMetadata(container, event) {
+    const metadata = document.createElement("div");
+    metadata.className = "event-audit-metadata";
+
+    const formatDate = (value) => {
+      if (!value) return "日時不明";
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return "日時不明";
+      return date.toLocaleString("ja-JP", {
+        timeZone: "Asia/Tokyo",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    };
+
+    const created = document.createElement("p");
+    created.textContent = `作成：${event.creator_name || "不明"}（${formatDate(event.created_at)}）`;
+    metadata.appendChild(created);
+
+    const updated = document.createElement("p");
+    updated.textContent = event.updated_at
+      ? `最終編集：${event.editor_name || "不明"}（${formatDate(event.updated_at)}）`
+      : "最終編集：記録なし";
+    metadata.appendChild(updated);
+    container.appendChild(metadata);
+  }
+
   function addControls(container, event, groupRole) {
     ready.then(() => {
       const role = roleForEvent(event, groupRole);
@@ -287,5 +317,6 @@ window.EventActions = (() => {
     open,
     remove,
     addControls,
+    appendAuditMetadata,
   };
 })();

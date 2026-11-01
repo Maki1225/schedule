@@ -428,6 +428,16 @@ body.demo-mode .demo-only-link {
   color: #626577;
 }
 
+.event-audit-metadata {
+  margin-top: 10px;
+  color: #737585;
+  font-size: 12px;
+}
+
+.event-audit-metadata p {
+  margin: 3px 0 0;
+}
+
 .shared-event-actions,
 .event-action-buttons {
   display: flex;

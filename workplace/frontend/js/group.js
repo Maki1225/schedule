@@ -274,6 +274,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         detail.textContent = description;
         card.appendChild(detail);
       }
+      if (isTask) window.EventActions.appendAuditMetadata(card, event);
       window.EventActions.addControls(card, event, group.role);
       container.appendChild(card);
     });
