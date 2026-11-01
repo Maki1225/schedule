@@ -1,0 +1,44 @@
+.demo-mode-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 9px;
+  border: 1px solid #d5d1ff;
+  border-radius: 9px;
+  background: #f0efff;
+  color: #554de0;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.demo-mode-badge[hidden] {
+  display: none;
+}
+
+#demoModeExitButton {
+  border: 0;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: #6c63ff;
+  color: white;
+  cursor: pointer;
+}
+
+body.demo-mode #accountMenu,
+body.demo-mode #shareMenuButton,
+body.demo-mode #googleIntegrationsMenuButton,
+body.demo-mode #googleIntegrations {
+  display: none !important;
+}
+
+@media (max-width: 760px) {
+  .demo-mode-badge {
+    font-size: 11px;
+    padding: 4px 6px;
+  }
+
+  #demoModeExitButton {
+    padding: 3px 5px;
+    font-size: 11px;
+  }
+}

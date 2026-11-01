@@ -46,6 +46,11 @@ async function requireAuth(baseUrl = window.API_BASE_URL || DEFAULT_API_URL) {
   const user = await checkAuth(baseUrl);
 
   if (!user) {
+    if (window.DemoMode?.active) {
+      window.DemoMode.expire();
+      return null;
+    }
+
     // 未ログインかつログインページでなければリダイレクト
     if (!window.location.pathname.endsWith('login.html')) {
       window.location.href = 'login.html';

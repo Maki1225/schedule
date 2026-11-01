@@ -117,7 +117,7 @@ export const AuthController = {
     }
 
     let profile = user
-    if (!isGeneratedProfileAvatar(user.picture)) {
+    if (payload.mode !== 'demo' && !isGeneratedProfileAvatar(user.picture)) {
       const picture = createProfileAvatar(String(user.id))
       const updatedUser = await UserModel.updatePicture(user.id, picture)
       if (!updatedUser) {
