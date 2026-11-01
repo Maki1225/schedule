@@ -25,10 +25,10 @@ export const EventController = {
       const eventQueries = [
         sql`
           INSERT INTO events (
-            group_id, created_by, title, description, start_time, end_time, subject, subject_color
+            group_id, created_by, updated_by, title, description, start_time, end_time, subject, subject_color
           )
           VALUES (
-            ${group_id}, ${user.id}, ${title}, ${description ?? null}, ${start_time}, ${end_time}, ${subject ?? null}, ${subject_color ?? null}
+            ${group_id}, ${user.id}, ${user.id}, ${title}, ${description ?? null}, ${start_time}, ${end_time}, ${subject ?? null}, ${subject_color ?? null}
           )
           RETURNING *
         `,
@@ -82,9 +82,11 @@ export const EventController = {
       const events = await sql`
         SELECT
           e.*,
-          u.name as creator_name
+          creator.name as creator_name,
+          editor.name as editor_name
         FROM events e
-        LEFT JOIN users u ON e.created_by = u.id
+        LEFT JOIN users creator ON e.created_by = creator.id
+        LEFT JOIN users editor ON e.updated_by = editor.id
         WHERE e.group_id = ${groupId}
         ORDER BY e.start_time ASC
       `
@@ -138,7 +140,9 @@ export const EventController = {
             start_time = ${start_time},
             end_time = ${end_time},
             subject = ${subject},
-            subject_color = ${subject_color}
+            subject_color = ${subject_color},
+            updated_by = ${user.id},
+            updated_at = CURRENT_TIMESTAMP
         WHERE id = ${eventId}
         RETURNING *
       `

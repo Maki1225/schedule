@@ -18,7 +18,7 @@ const personas = {
   aoi: {
     name: 'あおい',
     email: 'aoi108.demo@gmail.com',
-    birthday: '2099-08-22',
+    birthday: '2009-08-22',
     role: 'マイペースな情報収集型。テスト対策ノートの共有や講義予定の確認が中心。',
   },
   haruhi: {
@@ -27,9 +27,9 @@ const personas = {
     birthday: '2009-04-09',
     role: '効率重視の助け合いタイプ。課題の消化率が高く、進捗報告や過去問共有を担当。',
   },
-  minami: {
-    name: 'みなみ',
-    email: 'ryota.kosen.demo@gmail.com',
+  nami: {
+    name: 'なみ',
+    email: 'nami.kosen.demo@gmail.com',
     birthday: '2009-07-18',
     role: '部活と課題を両立中のムードメーカー。未完了の提出物が多く、仲間のリマインドを受ける。',
   },
@@ -135,11 +135,16 @@ export const DemoController = {
       ORDER BY g.id DESC
     `
     const events = await sql`
-      SELECT e.*, g.name AS group_name, u.name AS creator_name
+      SELECT
+        e.*,
+        g.name AS group_name,
+        creator.name AS creator_name,
+        editor.name AS editor_name
       FROM events e
       JOIN groups g ON g.id = e.group_id
       JOIN group_members gm ON gm.group_id = g.id
-      LEFT JOIN users u ON u.id = e.created_by
+      LEFT JOIN users creator ON creator.id = e.created_by
+      LEFT JOIN users editor ON editor.id = e.updated_by
       WHERE gm.user_id = ${user.id}
       ORDER BY e.start_time ASC
     `
@@ -149,7 +154,7 @@ export const DemoController = {
       WHERE email = ${personas.yuito.email}
         OR email = ${personas.aoi.email}
         OR email = ${personas.haruhi.email}
-        OR email = ${personas.minami.email}
+        OR email = ${personas.nami.email}
     `
     const taskCounts = await sql`
       SELECT created_by, COUNT(*)::int AS task_count
@@ -161,7 +166,7 @@ export const DemoController = {
           WHERE email = ${personas.yuito.email}
             OR email = ${personas.aoi.email}
             OR email = ${personas.haruhi.email}
-            OR email = ${personas.minami.email}
+            OR email = ${personas.nami.email}
         )
       GROUP BY created_by
     `
@@ -217,7 +222,7 @@ export const DemoController = {
               ${personas.yuito.email},
               ${personas.aoi.email},
               ${personas.haruhi.email},
-              ${personas.minami.email}
+              ${personas.nami.email}
             )
         )
     `
@@ -231,10 +236,15 @@ export const DemoController = {
       ORDER BY gm.role, u.name
     `
     const events = await sql`
-      SELECT e.*, g.name AS group_name, u.name AS creator_name
+      SELECT
+        e.*,
+        g.name AS group_name,
+        creator.name AS creator_name,
+        editor.name AS editor_name
       FROM events e
       JOIN groups g ON g.id = e.group_id
-      LEFT JOIN users u ON u.id = e.created_by
+      LEFT JOIN users creator ON creator.id = e.created_by
+      LEFT JOIN users editor ON editor.id = e.updated_by
       WHERE e.group_id = ${group.id}
       ORDER BY e.start_time ASC
     `

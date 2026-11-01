@@ -142,6 +142,10 @@
       group_name: eventGroupName(groupId),
       created_by: user?.id,
       creator_name: user?.name || "デモユーザー",
+      created_at: new Date().toISOString(),
+      updated_by: user?.id,
+      editor_name: user?.name || "デモユーザー",
+      updated_at: new Date().toISOString(),
       title: String(body.title || ""),
       description: body.description || "",
       start_time: body.start_time,
@@ -274,6 +278,43 @@
       const groupId = requestUrl.searchParams.get("groupId");
       if (groupId && findVirtualGroup(groupId)) {
         return jsonResponse({ events: groupEvents(groupId) });
+      }
+    }
+
+    const ephemeralEventMatch = pathname.match(/^\/api\/events\/(demo-ephemeral-\d+)$/);
+    if (ephemeralEventMatch && method === "PUT") {
+      const event = events.find((item) => item.id === ephemeralEventMatch[1]);
+      if (!event) return jsonResponse({ error: "予定・課題が見つかりません。" }, 404);
+      try {
+        const body = await requestBody(input, init);
+        const updatedEvent = {
+          ...event,
+          title: typeof body.title === "string" ? body.title.trim() : event.title,
+          description: typeof body.description === "string" ? body.description : event.description,
+          start_time: typeof body.start_time === "string" ? body.start_time : event.start_time,
+          end_time: typeof body.end_time === "string" ? body.end_time : event.end_time,
+          subject: body.subject ?? event.subject,
+          subject_color: body.subject_color ?? event.subject_color,
+        };
+        const startTime = Date.parse(updatedEvent.start_time);
+        const endTime = Date.parse(updatedEvent.end_time);
+        if (
+          !updatedEvent.title ||
+          !Number.isFinite(startTime) ||
+          !Number.isFinite(endTime) ||
+          endTime <= startTime
+        ) {
+          return jsonResponse({ error: "タイトルと正しい日時を入力してください。" }, 400);
+        }
+        updatedEvent.updated_by = user?.id;
+        updatedEvent.editor_name = user?.name || "デモユーザー";
+        updatedEvent.updated_at = new Date().toISOString();
+        Object.assign(event, updatedEvent);
+        persistState();
+        return jsonResponse({ message: "デモ中のみ表示するデータを更新しました。", event });
+      } catch (error) {
+        console.error("デモ課題・予定の更新に失敗しました:", error);
+        return jsonResponse({ error: "入力内容を読み取れませんでした。" }, 400);
       }
     }
 

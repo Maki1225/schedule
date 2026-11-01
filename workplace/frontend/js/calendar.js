@@ -314,6 +314,9 @@ async function showSchedule(dateStr) {
       div.appendChild(heading);
       if (description.textContent) div.appendChild(description);
       if (time.textContent) div.appendChild(time);
+      if ((event.description || "").startsWith("[課題]")) {
+        window.EventActions.appendAuditMetadata(div, event);
+      }
       window.EventActions.addControls(div, event);
 
       scheduleList.appendChild(div);

@@ -66,6 +66,7 @@ function renderTaskList(tasks, emptyMessage = '課題はありません。') {
       description.textContent = `📝 ${details}`;
       card.appendChild(description);
     }
+    window.EventActions.appendAuditMetadata(card, task);
     window.EventActions.addControls(card, task);
     container.appendChild(card);
   });

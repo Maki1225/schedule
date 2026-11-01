@@ -279,10 +279,12 @@ export const GroupController = {
     }
 
     const events = await sql`
-      SELECT *
-      FROM events
-      WHERE group_id = ${groupId}
-      ORDER BY start_time ASC
+      SELECT e.*, creator.name AS creator_name, editor.name AS editor_name
+      FROM events e
+      LEFT JOIN users creator ON e.created_by = creator.id
+      LEFT JOIN users editor ON e.updated_by = editor.id
+      WHERE e.group_id = ${groupId}
+      ORDER BY e.start_time ASC
     `
 
     return c.json({ events })
@@ -327,11 +329,12 @@ export const GroupController = {
 
     const created = await sql`
       INSERT INTO events (
-        group_id, created_by, title, description,
+        group_id, created_by, updated_by, title, description,
         start_time, end_time, subject, subject_color
       )
       VALUES (
         ${groupId},
+        ${userId},
         ${userId},
         ${title},
         ${typeof body.description === 'string' ? body.description : null},
