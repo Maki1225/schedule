@@ -27,9 +27,9 @@ const personas = {
     birthday: '2009-04-09',
     role: '効率重視の助け合いタイプ。課題の消化率が高く、進捗報告や過去問共有を担当。',
   },
-  minami: {
-    name: 'みなみ',
-    email: 'ryota.kosen.demo@gmail.com',
+  nami: {
+    name: 'なみ',
+    email: 'nami.kosen.demo@gmail.com',
     birthday: '2009-07-18',
     role: '部活と課題を両立中のムードメーカー。未完了の提出物が多く、仲間のリマインドを受ける。',
   },
@@ -149,7 +149,7 @@ export const DemoController = {
       WHERE email = ${personas.yuito.email}
         OR email = ${personas.aoi.email}
         OR email = ${personas.haruhi.email}
-        OR email = ${personas.minami.email}
+        OR email = ${personas.nami.email}
     `
     const taskCounts = await sql`
       SELECT created_by, COUNT(*)::int AS task_count
@@ -161,7 +161,7 @@ export const DemoController = {
           WHERE email = ${personas.yuito.email}
             OR email = ${personas.aoi.email}
             OR email = ${personas.haruhi.email}
-            OR email = ${personas.minami.email}
+            OR email = ${personas.nami.email}
         )
       GROUP BY created_by
     `
@@ -217,7 +217,7 @@ export const DemoController = {
               ${personas.yuito.email},
               ${personas.aoi.email},
               ${personas.haruhi.email},
-              ${personas.minami.email}
+              ${personas.nami.email}
             )
         )
     `

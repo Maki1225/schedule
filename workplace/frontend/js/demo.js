@@ -9,7 +9,7 @@
     yuito: "avatar-violet",
     aoi: "avatar-blue",
     haruhi: "avatar-green",
-    minami: "avatar-orange",
+    nami: "avatar-orange",
   };
   let profiles = [];
   let currentProfileId = "";
