@@ -124,6 +124,12 @@
       if (name) name.textContent = profile.name;
       const avatar = button.querySelector(".person-avatar");
       if (avatar) renderAvatar(avatar, profile.id);
+      const birthday = button.querySelector(".map-birthday");
+      if (birthday) birthday.textContent = dateLabel(profile.birthday);
+      const role = button.querySelector(".map-role");
+      if (role) role.textContent = profile.role;
+      const taskCount = button.querySelector(".map-task-count");
+      if (taskCount) taskCount.textContent = `現在の課題：${profile.taskCount}件`;
     });
   }
 
