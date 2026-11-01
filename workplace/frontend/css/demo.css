@@ -160,7 +160,7 @@ select:focus-visible {
 
 .relation-map {
   position: relative;
-  min-height: 460px;
+  min-height: 620px;
   overflow: hidden;
   border: 1px solid #ecebff;
   border-radius: 16px;
@@ -204,12 +204,69 @@ select:focus-visible {
   transition: border-color .2s, box-shadow .2s, transform .2s;
 }
 
+.map-person[data-map-position] {
+  top: var(--map-y);
+  right: auto;
+  bottom: auto;
+  left: var(--map-x);
+  transform: translate(-50%, -50%);
+}
+
+.map-person[data-map-position="center"] { --map-x: 50%; --map-y: 50%; }
+.map-person[data-map-position="upper-left"] { --map-x: 16%; --map-y: 20%; }
+.map-person[data-map-position="upper-right"] { --map-x: 84%; --map-y: 20%; }
+.map-person[data-map-position="lower-left"] { --map-x: 16%; --map-y: 80%; }
+.map-person[data-map-position="lower-right"] { --map-x: 84%; --map-y: 80%; }
+
+.map-person.is-current-profile {
+  width: min(270px, 34%);
+  min-height: 140px;
+  border: 2px solid #6c63ff;
+  background: #fbfaff;
+  box-shadow: 0 8px 26px rgba(84, 76, 195, .2);
+}
+
 .map-person:hover,
 .map-person:focus-visible {
   transform: translateY(-2px);
   border-color: #9c96e8;
   background: #fff;
   box-shadow: 0 8px 20px rgba(48, 47, 91, .13);
+}
+
+.map-person[data-map-position]:hover,
+.map-person[data-map-position]:focus-visible {
+  transform: translate(-50%, calc(-50% - 2px));
+}
+
+.relation-lines .relation-current {
+  stroke: #aaa5e3;
+  stroke-width: 1.7;
+}
+
+.relation-lines .relation-group-link {
+  stroke: #a7cbe8;
+  stroke-width: 1.7;
+  stroke-dasharray: 5 6;
+}
+
+.relation-lines .relation-label rect {
+  fill: #fff;
+  stroke: #dedcf0;
+  stroke-width: 1;
+}
+
+.relation-lines .relation-label text {
+  dominant-baseline: central;
+  fill: #55536f;
+  font-family: inherit;
+  font-size: 8px;
+  font-weight: 700;
+  text-anchor: middle;
+}
+
+.relation-lines .relation-label {
+  pointer-events: none;
 }
 
 .map-yuito {
@@ -259,6 +316,21 @@ select:focus-visible {
   color: #343449;
   font-size: 15px;
   font-weight: 800;
+}
+
+.map-current-label {
+  display: none;
+  width: fit-content;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #eeedff;
+  color: #554de0;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.map-person.is-current-profile .map-current-label {
+  display: inline-block;
 }
 
 .map-birthday {
@@ -357,11 +429,11 @@ select:focus-visible {
 }
 
 .map-group-lab {
-  top: 42%;
+  top: 9%;
 }
 
 .map-group-work {
-  top: 62%;
+  top: 91%;
 }
 
 .profile-grid {
@@ -746,7 +818,7 @@ select:focus-visible {
   }
 
   .relation-map {
-    min-height: 570px;
+    min-height: 650px;
   }
 
   .map-person {
@@ -755,6 +827,38 @@ select:focus-visible {
     gap: 7px;
     padding: 9px;
   }
+
+  .map-person.is-current-profile {
+    width: 70%;
+    min-height: 140px;
+  }
+
+  .map-person:not(.is-current-profile) {
+    width: 46%;
+  }
+
+  .map-person[data-map-position="upper-left"],
+  .map-person[data-map-position="upper-right"] {
+    --map-y: 25%;
+  }
+
+  .map-person[data-map-position="lower-left"],
+  .map-person[data-map-position="lower-right"] {
+    --map-y: 75%;
+  }
+
+  .map-person[data-map-position="upper-left"],
+  .map-person[data-map-position="lower-left"] {
+    --map-x: 27%;
+  }
+
+  .map-person[data-map-position="upper-right"],
+  .map-person[data-map-position="lower-right"] {
+    --map-x: 73%;
+  }
+
+  .map-group-lab { top: 6%; }
+  .map-group-work { top: 94%; }
 
   .map-yuito {
     top: 4%;

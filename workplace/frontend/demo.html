@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
   <title>クラスのつながり - Study Planner</title>
-  <link rel="stylesheet" href="css/demo.css">
+  <link rel="stylesheet" href="css/demo.css?v=3">
   <link rel="stylesheet" href="css/demo-mode.css">
   <script>window.API_BASE_URL = "https://schedule-backend-navy.vercel.app";</script>
   <script src="js/demo-mode.js"></script>
@@ -39,25 +39,17 @@
         <div>
           <p class="eyebrow">CLASS INSIGHTS</p>
           <h1 id="relationshipTitle">クラスのつながり</h1>
-          <p>人物を選ぶとプロフィールを確認できます。</p>
+          <p>人物を選ぶとプロフィールを確認できます。線のラベルはメンバーとグループの関係を示します。</p>
         </div>
         <span class="group-pill">高専・同じクラス</span>
       </div>
-      <div class="relation-map" aria-label="実験班とグループワークを通じた4人の人物相関図">
-        <svg class="relation-lines" viewBox="0 0 800 460" role="img" aria-label="4人が同じクラスに所属し、実験班とグループワークでつながっています">
-          <line x1="140" y1="100" x2="400" y2="195"></line>
-          <line x1="660" y1="100" x2="400" y2="195"></line>
-          <line x1="140" y1="360" x2="400" y2="195"></line>
-          <line x1="660" y1="360" x2="400" y2="195"></line>
-          <line class="relation-secondary" x1="140" y1="100" x2="400" y2="285"></line>
-          <line class="relation-secondary" x1="660" y1="100" x2="400" y2="285"></line>
-          <line class="relation-secondary" x1="140" y1="360" x2="400" y2="285"></line>
-          <line class="relation-secondary" x1="660" y1="360" x2="400" y2="285"></line>
-        </svg>
+      <div class="relation-map" aria-label="実験班とグループワークでの関係を示した4人の相関図">
+        <svg class="relation-lines" role="img" aria-label="ログイン中の人と他のメンバーは同級生です。実験班に所属し、グループワークで協力しています。"></svg>
         <button class="map-person map-yuito" type="button" data-profile-id="yuito" aria-label="ゆいとのプロフィールを表示">
           <span class="person-avatar avatar-violet" aria-hidden="true"></span>
           <span class="map-person-info">
             <span class="map-name">ゆいと</span>
+            <span class="map-current-label">ログイン中</span>
             <span class="map-birthday"></span>
             <span class="map-role"></span>
             <span class="map-task-count"></span>
@@ -67,6 +59,7 @@
           <span class="person-avatar avatar-blue" aria-hidden="true"></span>
           <span class="map-person-info">
             <span class="map-name">あおい</span>
+            <span class="map-current-label">ログイン中</span>
             <span class="map-birthday"></span>
             <span class="map-role"></span>
             <span class="map-task-count"></span>
@@ -76,6 +69,7 @@
           <span class="person-avatar avatar-green" aria-hidden="true"></span>
           <span class="map-person-info">
             <span class="map-name">はるひ</span>
+            <span class="map-current-label">ログイン中</span>
             <span class="map-birthday"></span>
             <span class="map-role"></span>
             <span class="map-task-count"></span>
@@ -85,6 +79,7 @@
           <span class="person-avatar avatar-orange" aria-hidden="true"></span>
           <span class="map-person-info">
             <span class="map-name">なみ</span>
+            <span class="map-current-label">ログイン中</span>
             <span class="map-birthday"></span>
             <span class="map-role"></span>
             <span class="map-task-count"></span>
@@ -114,9 +109,9 @@
     <h2 id="profileDialogName"></h2>
     <p id="profileDialogBirthday" class="dialog-birthday"></p>
     <p id="profileDialogRole" class="dialog-role"></p>
-    <p class="dialog-task-count">現在の課題数：<strong id="profileDialogTaskCount">0</strong> 件</p>
+    <p class="dialog-task-count">登録課題数：<strong id="profileDialogTaskCount">0</strong> 件</p>
   </dialog>
 
-  <script src="js/demo.js"></script>
+  <script src="js/demo.js?v=6"></script>
 </body>
 </html>
