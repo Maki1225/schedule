@@ -1,21 +1,8 @@
-document.addEventListener("DOMContentLoaded", async () => {
-  const links = document.querySelectorAll("[data-auth-link]");
+document.addEventListener("DOMContentLoaded", () => {
   const demoButton = document.getElementById("demoModeButton");
   const heroDemoButton = document.getElementById("heroDemoModeButton");
   const demoOptions = document.getElementById("demoModeOptions");
   const demoMessage = document.getElementById("demoModeMessage");
-
-  try {
-    const user = await checkAuth();
-    if (user) {
-      links.forEach((link) => {
-        link.href = "calendar.html";
-        link.textContent = "カレンダーへ";
-      });
-    }
-  } catch (error) {
-    console.error("ログイン状態の確認に失敗しました:", error);
-  }
 
   function showDemoOptions() {
     demoOptions.hidden = false;
