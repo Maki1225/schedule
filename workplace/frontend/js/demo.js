@@ -127,8 +127,12 @@
     const response = await fetch(`${baseUrl}/api/demo/me`, {
       credentials: "include",
       cache: "no-store",
+      headers: {
+        Authorization: `Bearer ${sessionStorage.getItem("demoSessionToken") || ""}`,
+      },
     });
     if (response.status === 401) {
+      sessionStorage.removeItem("demoSessionToken");
       window.location.replace("index.html");
       return;
     }
@@ -194,6 +198,7 @@
         cache: "no-store",
       });
       if (!response.ok) throw new Error("デモを終了できませんでした。");
+      sessionStorage.removeItem("demoSessionToken");
       userTasks = [];
       window.location.replace("index.html");
     } catch (error) {
