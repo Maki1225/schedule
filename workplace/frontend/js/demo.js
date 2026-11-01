@@ -39,6 +39,97 @@
     }).format(date);
   }
 
+  function drawRelationLines() {
+    const map = document.querySelector(".relation-map");
+    const svg = map?.querySelector(".relation-lines");
+    const currentPerson = map?.querySelector(".map-person.is-current-profile");
+    if (!map || !svg || !currentPerson) return;
+
+    const svgBounds = svg.getBoundingClientRect();
+    if (!svgBounds.width || !svgBounds.height) return;
+    svg.setAttribute("viewBox", `0 0 ${svgBounds.width} ${svgBounds.height}`);
+    svg.replaceChildren();
+
+    const box = (element) => {
+      const rect = element.getBoundingClientRect();
+      return {
+        left: rect.left - svgBounds.left,
+        top: rect.top - svgBounds.top,
+        width: rect.width,
+        height: rect.height,
+      };
+    };
+    const edgePoint = (source, target) => {
+      const center = {
+        x: source.left + source.width / 2,
+        y: source.top + source.height / 2,
+      };
+      const targetCenter = {
+        x: target.left + target.width / 2,
+        y: target.top + target.height / 2,
+      };
+      const delta = {
+        x: targetCenter.x - center.x,
+        y: targetCenter.y - center.y,
+      };
+      const scale = Math.min(
+        (source.width / 2) / Math.abs(delta.x || Number.EPSILON),
+        (source.height / 2) / Math.abs(delta.y || Number.EPSILON)
+      );
+      const length = Math.hypot(delta.x, delta.y) || 1;
+      return {
+        x: center.x + delta.x * scale + (delta.x / length) * 1.5,
+        y: center.y + delta.y * scale + (delta.y / length) * 1.5,
+      };
+    };
+    const addLine = (from, to, className, label, labelOffset = 12, labelPosition = 0.5) => {
+      const fromBox = box(from);
+      const toBox = box(to);
+      const start = edgePoint(fromBox, toBox);
+      const end = edgePoint(toBox, fromBox);
+      const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      line.setAttribute("x1", String(start.x));
+      line.setAttribute("y1", String(start.y));
+      line.setAttribute("x2", String(end.x));
+      line.setAttribute("y2", String(end.y));
+      line.setAttribute("class", className);
+      svg.appendChild(line);
+
+      const direction = { x: end.x - start.x, y: end.y - start.y };
+      const length = Math.hypot(direction.x, direction.y) || 1;
+      const midpoint = {
+        x: start.x + direction.x * labelPosition - (direction.y / length) * labelOffset,
+        y: start.y + direction.y * labelPosition + (direction.x / length) * labelOffset,
+      };
+      const labelWidth = Math.max(28, label.length * 7 + 8);
+      const labelGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      labelGroup.setAttribute("class", "relation-label");
+      labelGroup.setAttribute("aria-hidden", "true");
+      const background = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+      background.setAttribute("x", String(midpoint.x - labelWidth / 2));
+      background.setAttribute("y", String(midpoint.y - 10));
+      background.setAttribute("width", String(labelWidth));
+      background.setAttribute("height", "20");
+      background.setAttribute("rx", "10");
+      const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      text.setAttribute("x", String(midpoint.x));
+      text.setAttribute("y", String(midpoint.y));
+      text.textContent = label;
+      labelGroup.append(background, text);
+      svg.appendChild(labelGroup);
+    };
+
+    map.querySelectorAll(".map-person:not(.is-current-profile)").forEach((person) => {
+      addLine(currentPerson, person, "relation-current", "同級生", 0);
+    });
+    map.querySelectorAll(".map-group").forEach((group) => {
+      const label = group.classList.contains("map-group-lab")
+        ? "実験班に所属"
+        : "グループワークで協力";
+      addLine(currentPerson, group, "relation-group-link", label, 0, 0.9);
+    });
+  }
+
   function showProfile(profileId) {
     const profile = profiles.find((item) => item.id === profileId);
     if (!profile) return;
@@ -89,7 +180,7 @@
 
       const taskCount = document.createElement("p");
       taskCount.className = "profile-task-count";
-      taskCount.append("現在の課題数：");
+      taskCount.append("登録課題数：");
       const count = document.createElement("strong");
       count.textContent = String(profile.taskCount);
       taskCount.appendChild(count);
@@ -115,10 +206,23 @@
       profilesContainer.appendChild(card);
     });
 
+    const mapPositions = [
+      "upper-left",
+      "upper-right",
+      "lower-left",
+      "lower-right",
+    ];
+    let positionIndex = 0;
     document.querySelectorAll(".map-person").forEach((button) => {
       const profile = profiles.find((item) => item.id === button.dataset.profileId);
       button.disabled = !profile;
       if (!profile) return;
+      const isCurrentProfile = profile.id === currentProfileId;
+      button.classList.toggle("is-current-profile", isCurrentProfile);
+      const position = isCurrentProfile
+        ? "center"
+        : mapPositions[positionIndex++];
+      button.dataset.mapPosition = position;
       button.setAttribute("aria-label", `${profile.name}のプロフィールを表示`);
       const name = button.querySelector(".map-name");
       if (name) name.textContent = profile.name;
@@ -129,8 +233,15 @@
       const role = button.querySelector(".map-role");
       if (role) role.textContent = profile.role;
       const taskCount = button.querySelector(".map-task-count");
-      if (taskCount) taskCount.textContent = `現在の課題：${profile.taskCount}件`;
+      if (taskCount) taskCount.textContent = `登録課題：${profile.taskCount}件`;
     });
+    const relationshipDescription = document.querySelector("#relationshipTitle + p");
+    const currentProfile = profiles.find((profile) => profile.id === currentProfileId);
+    if (relationshipDescription && currentProfile) {
+      relationshipDescription.textContent = `${currentProfile.name}を中心に、クラスのつながりを表示しています。`;
+    }
+    requestAnimationFrame(() => requestAnimationFrame(drawRelationLines));
+    document.fonts?.ready.then(drawRelationLines);
   }
 
   async function loadProfiles() {
@@ -212,6 +323,15 @@
   profileDialog.addEventListener("click", (event) => {
     if (event.target === profileDialog) profileDialog.close();
   });
+  window.addEventListener("resize", drawRelationLines);
+  const relationMap = document.querySelector(".relation-map");
+  if (relationMap && "ResizeObserver" in window) {
+    const relationObserver = new ResizeObserver(drawRelationLines);
+    relationObserver.observe(relationMap);
+    relationMap.querySelectorAll(".map-person, .map-group").forEach((element) => {
+      relationObserver.observe(element);
+    });
+  }
 
   loadProfiles().catch((error) => {
     console.error("デモプロフィールの初期化に失敗しました:", error);
