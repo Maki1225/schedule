@@ -18,7 +18,7 @@ const personas = {
   aoi: {
     name: 'あおい',
     email: 'aoi108.demo@gmail.com',
-    birthday: '2099-08-22',
+    birthday: '2009-08-22',
     role: 'マイペースな情報収集型。テスト対策ノートの共有や講義予定の確認が中心。',
   },
   haruhi: {
