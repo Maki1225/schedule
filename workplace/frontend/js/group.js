@@ -19,6 +19,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   const groupMembers = document.getElementById("groupMembers");
   const groupTasks = document.getElementById("groupTasks");
   const groupSchedules = document.getElementById("groupSchedules");
+  const groupChatMessages = document.getElementById("groupChatMessages");
+  const groupChatStatus = document.getElementById("groupChatStatus");
+  const groupChatForm = document.getElementById("groupChatForm");
+  const groupChatInput = document.getElementById("groupChatInput");
+  const groupChatSendButton = document.getElementById("groupChatSendButton");
   const calendarViewTab = document.getElementById("calendarViewTab");
   const calendarGroupTitle = document.getElementById("calendarGroupTitle");
   const calendarContainer = document.getElementById("groupCalendar");
@@ -37,6 +42,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   let calendarScriptPromise = null;
   let selectionRequestId = 0;
   let currentUser;
+  let chatPollTimer = null;
+  let chatCursor = null;
+  let chatRequestInProgress = false;
+  const inappropriateChatTerms = [
+    "死ね", "消えろ", "殺す", "きもい", "うざい", "ばか", "あほ",
+    "くそ", "fuck", "shit", "bitch", "idiot",
+  ];
 
   try {
     currentUser = await requireAuth();
@@ -99,6 +111,86 @@ document.addEventListener("DOMContentLoaded", async () => {
   function setJoinGroupMessage(text, isError = false) {
     joinGroupMessage.textContent = text;
     joinGroupMessage.classList.toggle("error", isError);
+  }
+
+  function setChatStatus(text, isError = false) {
+    groupChatStatus.textContent = text;
+    groupChatStatus.classList.toggle("error", isError);
+  }
+
+  function renderChatMessage(message) {
+    const item = document.createElement("article");
+    const isTaskMessage = message.message_type === "task";
+    item.className = `group-chat-message${isTaskMessage ? " is-task" : String(message.sender_id) === String(currentUser.id) ? " is-mine" : ""}`;
+
+    const sender = document.createElement("strong");
+    sender.textContent = isTaskMessage ? "課題のお知らせ" : message.sender_name || "メンバー";
+    item.appendChild(sender);
+
+    const body = document.createElement("p");
+    body.textContent = message.body;
+    item.appendChild(body);
+
+    const sentAt = new Date(message.created_at);
+    const time = document.createElement("time");
+    if (!Number.isNaN(sentAt.getTime())) {
+      time.dateTime = sentAt.toISOString();
+      time.textContent = sentAt.toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" });
+    }
+    item.appendChild(time);
+    groupChatMessages.appendChild(item);
+  }
+
+  function stopChatPolling() {
+    if (chatPollTimer !== null) {
+      window.clearInterval(chatPollTimer);
+      chatPollTimer = null;
+    }
+  }
+
+  async function loadGroupChat(groupId, reset = false) {
+    if (chatRequestInProgress) return;
+    if (reset) {
+      chatCursor = null;
+      groupChatMessages.replaceChildren();
+    }
+    chatRequestInProgress = true;
+    try {
+      const cursor = chatCursor === null ? "" : `?afterId=${encodeURIComponent(chatCursor)}`;
+      const data = await apiRequest(`/api/groups/${encodeURIComponent(groupId)}/messages${cursor}`);
+      if (String(groupId) !== selectedGroupId) return;
+      if (!Array.isArray(data.messages)) throw new Error("チャット履歴の形式が正しくありません。");
+
+      if (data.messages.length === 0 && reset) {
+        const empty = document.createElement("p");
+        empty.className = "group-chat-empty";
+        empty.textContent = "まだメッセージはありません。課題を追加するか、最初のメッセージを送信しましょう。";
+        groupChatMessages.appendChild(empty);
+      } else {
+        data.messages.forEach((message) => {
+          groupChatMessages.querySelector(".group-chat-empty")?.remove();
+          renderChatMessage(message);
+          chatCursor = String(message.id);
+        });
+      }
+
+      groupChatMessages.scrollTop = groupChatMessages.scrollHeight;
+      setChatStatus("");
+    } catch (error) {
+      console.error("グループチャットの取得に失敗しました:", error);
+      setChatStatus(error.message || "チャット履歴を取得できませんでした。", true);
+    } finally {
+      chatRequestInProgress = false;
+    }
+  }
+
+  function startChatPolling(groupId) {
+    stopChatPolling();
+    chatPollTimer = window.setInterval(() => {
+      if (!document.hidden && selectedGroupId === String(groupId)) {
+        void loadGroupChat(groupId);
+      }
+    }, 5000);
   }
 
   function showEmptyState() {
@@ -214,6 +306,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   async function selectGroup(groupId) {
+    stopChatPolling();
+    chatCursor = null;
     const requestId = ++selectionRequestId;
     const group = groups.find((item) => String(item.id) === String(groupId));
     if (!group) return;
@@ -238,6 +332,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       selectedEvents = eventData.events;
       renderOverview(selectedGroup, detailData.members, selectedEvents);
       setGroupMessage("");
+      await loadGroupChat(group.id, true);
+      startChatPolling(group.id);
       if (calendar && !document.getElementById("calendarView").hidden) {
         renderCalendarEvents();
       }
@@ -453,6 +549,44 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("inviteCode").addEventListener("input", () => {
     setJoinGroupMessage("");
   });
+
+  groupChatForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const text = groupChatInput.value.trim();
+    if (!selectedGroupId || !text) return;
+
+    const normalizedText = text.normalize("NFKC").toLowerCase().replace(/\s/g, "");
+    if (inappropriateChatTerms.some((term) => normalizedText.includes(term))) {
+      setChatStatus("不適切な表現が含まれているため、送信できません。", true);
+      return;
+    }
+
+    groupChatSendButton.disabled = true;
+    setChatStatus("送信しています...");
+    try {
+      const data = await apiRequest(`/api/groups/${encodeURIComponent(selectedGroupId)}/messages`, {
+        method: "POST",
+        body: JSON.stringify({ body: text }),
+      });
+      if (!data.message?.id) throw new Error("送信したメッセージを取得できませんでした。");
+      groupChatMessages.querySelector(".group-chat-empty")?.remove();
+      renderChatMessage(data.message);
+      chatCursor = String(data.message.id);
+      groupChatMessages.scrollTop = groupChatMessages.scrollHeight;
+      groupChatInput.value = "";
+      setChatStatus("送信しました。");
+    } catch (error) {
+      console.error("グループチャットの送信に失敗しました:", error);
+      setChatStatus(error.message || "メッセージを送信できませんでした。", true);
+    } finally {
+      groupChatSendButton.disabled = false;
+    }
+  });
+
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden && selectedGroupId) void loadGroupChat(selectedGroupId);
+  });
+  window.addEventListener("pagehide", stopChatPolling);
 
   window.addEventListener("event-changed", (event) => {
     if (String(event.detail?.groupId) === selectedGroupId) {

@@ -6,25 +6,31 @@
   <meta name="robots" content="noindex, nofollow">
   <title>クラスのつながり - Study Planner</title>
   <link rel="stylesheet" href="css/demo.css">
+  <link rel="stylesheet" href="css/demo-mode.css">
   <script>window.API_BASE_URL = "https://schedule-backend-navy.vercel.app";</script>
+  <script src="js/demo-mode.js"></script>
 </head>
 <body>
   <header class="demo-header">
-    <a class="demo-brand" href="index.html">Study Planner</a>
+    <a class="demo-brand" href="calendar.html">Study Planner</a>
     <nav class="demo-nav" aria-label="デモページ">
-      <a href="demo.html" aria-current="page">クラスのつながり</a>
-      <a href="demo-tasks.html">課題・チャット</a>
+      <a href="calendar.html">カレンダー・課題</a>
+      <a href="group.html">グループ・チャット</a>
+      <a href="demo.html" aria-current="page">クラス相関図</a>
     </nav>
     <div class="demo-account">
       <span id="demoUserName">デモ情報を読み込み中...</span>
-      <button id="demoLogoutButton" type="button">デモを終了</button>
+      <div id="demoModeBadge" class="demo-mode-badge" hidden>
+        <span>デモモード</span>
+        <button type="button" id="demoModeExitButton">デモを終了</button>
+      </div>
     </div>
   </header>
 
   <main class="demo-main">
     <section class="demo-notice" aria-label="デモの注意事項">
       <strong>デモモード</strong>
-      <span>課題とチャット履歴はデモページ間で共有され、再読み込み・ページを離れると消去されます。</span>
+      <span>課題、グループ、チャットの変更はこのタブのデモセッション内だけで保持されます。</span>
     </section>
     <p id="demoStatus" class="demo-status" role="status" aria-live="polite"></p>
 

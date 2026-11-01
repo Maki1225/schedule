@@ -25,10 +25,23 @@
 }
 
 body.demo-mode #accountMenu,
-body.demo-mode #shareMenuButton,
 body.demo-mode #googleIntegrationsMenuButton,
 body.demo-mode #googleIntegrations {
   display: none !important;
+}
+
+#demoInsightsLink,
+.demo-only-link {
+  display: none;
+  color: #554de0;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+body.demo-mode #demoInsightsLink,
+body.demo-mode .demo-only-link {
+  display: inline-flex;
+  align-items: center;
 }
 
 @media (max-width: 760px) {
