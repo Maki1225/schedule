@@ -14,6 +14,20 @@
   let profiles = [];
   let currentProfileId = "";
 
+  function renderAvatar(avatar, profileId) {
+    avatar.className = `person-avatar ${profileStyles[profileId] || "avatar-violet"}`;
+    avatar.replaceChildren();
+    const pixels = document.createElement("span");
+    pixels.className = "avatar-pixels";
+    pixels.setAttribute("aria-hidden", "true");
+    for (let index = 0; index < 4; index += 1) {
+      const square = document.createElement("span");
+      square.className = "avatar-square";
+      pixels.appendChild(square);
+    }
+    avatar.appendChild(pixels);
+  }
+
   function dateLabel(dateValue) {
     const date = new Date(`${dateValue}T00:00:00+09:00`);
     if (Number.isNaN(date.getTime())) return "誕生日不明";
@@ -30,8 +44,7 @@
     if (!profile) return;
 
     const avatar = document.getElementById("profileDialogAvatar");
-    avatar.className = `person-avatar ${profileStyles[profile.id] || "avatar-violet"}`;
-    avatar.textContent = profile.name.slice(0, 1);
+    renderAvatar(avatar, profile.id);
     document.getElementById("profileDialogName").textContent = profile.name;
     document.getElementById("profileDialogBirthday").textContent = `誕生日：${dateLabel(profile.birthday)}`;
     document.getElementById("profileDialogRole").textContent = profile.role;
@@ -56,8 +69,7 @@
       const heading = document.createElement("div");
       heading.className = "profile-card-heading";
       const avatar = document.createElement("span");
-      avatar.className = `person-avatar ${profileStyles[profile.id] || "avatar-violet"}`;
-      avatar.textContent = profile.name.slice(0, 1);
+      renderAvatar(avatar, profile.id);
       avatar.setAttribute("aria-hidden", "true");
       heading.appendChild(avatar);
       const name = document.createElement("h3");
@@ -111,7 +123,7 @@
       const name = button.querySelector(".map-name");
       if (name) name.textContent = profile.name;
       const avatar = button.querySelector(".person-avatar");
-      if (avatar) avatar.textContent = profile.name.slice(0, 1);
+      if (avatar) renderAvatar(avatar, profile.id);
     });
   }
 
