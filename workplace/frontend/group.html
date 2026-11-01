@@ -13,6 +13,8 @@
   <link href="https://cdn.jsdelivr.net/npm/fullcalendar@7.1.2/themes/monarch/palettes/purple.css" rel="stylesheet">
   <script src="js/theme.js" defer></script>
   <script>window.API_BASE_URL = "https://schedule-backend-navy.vercel.app";</script>
+  <script src="js/demo-mode.js"></script>
+  <link rel="stylesheet" href="css/demo-mode.css">
 </head>
 
 <body>
@@ -20,6 +22,11 @@
     <a class="brand" href="calendar.html">Study Planner</a>
     <nav aria-label="メインメニュー">
       <a href="calendar.html">カレンダーに戻る</a>
+      <a id="demoInsightsLink" class="demo-only-link" href="demo.html">クラス相関図</a>
+      <div id="demoModeBadge" class="demo-mode-badge" hidden>
+        <span>デモモード</span>
+        <button type="button" id="demoModeExitButton">デモを終了</button>
+      </div>
       <div id="accountMenu" class="account-menu">
         <button id="accountMenuButton" class="account-menu-trigger" type="button" aria-label="アカウントメニューを開く" aria-controls="accountMenuPanel" aria-expanded="false">
           <span id="accountAvatarInitial" aria-hidden="true">?</span>
@@ -103,6 +110,22 @@
 
             <h3>メンバー</h3>
             <ul id="groupMembers" class="member-list"></ul>
+
+            <section class="group-chat" aria-labelledby="groupChatTitle">
+              <div class="group-chat-heading">
+                <div>
+                  <h3 id="groupChatTitle">グループチャット</h3>
+                  <p>このグループのメンバーとメッセージを共有できます。</p>
+                </div>
+                <span id="groupChatStatus" role="status" aria-live="polite"></span>
+              </div>
+              <div id="groupChatMessages" class="group-chat-messages" role="log" aria-live="polite" aria-relevant="additions text"></div>
+              <form id="groupChatForm" class="group-chat-form">
+                <label class="visually-hidden" for="groupChatInput">メッセージ</label>
+                <input id="groupChatInput" type="text" maxlength="500" autocomplete="off" placeholder="メッセージを入力" required>
+                <button id="groupChatSendButton" type="submit">送信</button>
+              </form>
+            </section>
 
             <div class="shared-items">
               <section>

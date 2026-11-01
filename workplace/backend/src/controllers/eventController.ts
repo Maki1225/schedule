@@ -22,15 +22,38 @@ export const EventController = {
         return c.json({ error: 'このグループに予定を作成する権限がありません' }, 403)
       }
 
-      const [newEvent] = await sql`
-        INSERT INTO events (
-          group_id, created_by, title, description, start_time, end_time, subject, subject_color
-        )
-        VALUES (
-          ${group_id}, ${user.id}, ${title}, ${description ?? null}, ${start_time}, ${end_time}, ${subject ?? null}, ${subject_color ?? null}
-        )
-        RETURNING *
-      `
+      const eventQueries = [
+        sql`
+          INSERT INTO events (
+            group_id, created_by, title, description, start_time, end_time, subject, subject_color
+          )
+          VALUES (
+            ${group_id}, ${user.id}, ${title}, ${description ?? null}, ${start_time}, ${end_time}, ${subject ?? null}, ${subject_color ?? null}
+          )
+          RETURNING *
+        `,
+      ]
+
+      if (description?.startsWith('[課題]')) {
+        const deadline = new Intl.DateTimeFormat('ja-JP', {
+          timeZone: 'Asia/Tokyo',
+          year: 'numeric',
+          month: 'numeric',
+          day: 'numeric',
+        }).format(new Date(end_time))
+        eventQueries.push(sql`
+          INSERT INTO group_chat_messages (group_id, sender_id, body, message_type)
+          VALUES (
+            ${group_id},
+            ${user.id},
+            ${`課題「${title}」を追加しました（提出期限：${deadline}）。`},
+            'task'
+          )
+        `)
+      }
+
+      const [createdEvents] = await sql.transaction(eventQueries)
+      const newEvent = createdEvents[0]
 
       return c.json({ message: '予定を作成しました', event: newEvent }, 201)
     } catch (err) {

@@ -6,6 +6,7 @@ const demoRoutes = new Hono<Env>()
 
 demoRoutes.post('/sessions', (c) => DemoController.createSession(c))
 demoRoutes.get('/me', (c) => DemoController.getSession(c))
+demoRoutes.get('/groups/invite/:inviteCode', (c) => DemoController.previewGroup(c))
 demoRoutes.delete('/sessions/current', (c) => DemoController.endSession(c))
 
 export default demoRoutes

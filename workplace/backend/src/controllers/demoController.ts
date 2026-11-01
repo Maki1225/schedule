@@ -193,6 +193,56 @@ export const DemoController = {
     })
   },
 
+  async previewGroup(c: AppContext) {
+    const payload = await getDemoPayload(c)
+    if (!payload || !isPersonaId(payload.persona)) {
+      return c.json({ error: 'デモセッションがありません。' }, 401)
+    }
+
+    const inviteCode = (c.req.param('inviteCode') || '').trim().toUpperCase()
+    if (!inviteCode || inviteCode.length > 32) {
+      return c.json({ error: '招待コードが不正です。' }, 400)
+    }
+
+    const [group] = await sql`
+      SELECT g.id, g.name, g.invite_code
+      FROM groups g
+      WHERE UPPER(g.invite_code) = ${inviteCode}
+        AND EXISTS (
+          SELECT 1
+          FROM group_members gm
+          JOIN users u ON u.id = gm.user_id
+          WHERE gm.group_id = g.id
+            AND u.email IN (
+              ${personas.yuito.email},
+              ${personas.aoi.email},
+              ${personas.haruhi.email},
+              ${personas.minami.email}
+            )
+        )
+    `
+    if (!group) return c.json({ error: '招待コードが見つからないか、デモでは参加できないグループです。' }, 404)
+
+    const members = await sql`
+      SELECT u.id, u.name, u.email, gm.role
+      FROM group_members gm
+      JOIN users u ON u.id = gm.user_id
+      WHERE gm.group_id = ${group.id}
+      ORDER BY gm.role, u.name
+    `
+    const events = await sql`
+      SELECT e.*, g.name AS group_name, u.name AS creator_name
+      FROM events e
+      JOIN groups g ON g.id = e.group_id
+      LEFT JOIN users u ON u.id = e.created_by
+      WHERE e.group_id = ${group.id}
+      ORDER BY e.start_time ASC
+    `
+
+    c.header('Cache-Control', 'no-store')
+    return c.json({ group, members, events })
+  },
+
   endSession(c: AppContext) {
     deleteCookie(c, demoCookie, {
       path: '/',

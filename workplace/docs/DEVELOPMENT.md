@@ -38,3 +38,8 @@ JWT_SECRET="your_jwt_secret"
 GOOGLE_CLIENT_ID="your_google_client_id"
 ```
 
+## 4. グループチャットのDB準備
+
+グループチャットを有効にする前に、Neon PostgreSQLで
+`backend/migrations/20261101_create_group_chat_messages.sql` を一度実行してください。
+メッセージはグループ単位で保存され、課題の追加通知も同じテーブルに記録されます。

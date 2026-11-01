@@ -54,6 +54,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (shareButton) {
     shareButton.addEventListener("click", () => {
+      if (window.DemoMode?.active) window.DemoMode.prepareNavigation();
       window.location.href = "group.html";
     });
   }

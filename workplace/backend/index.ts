@@ -27,6 +27,8 @@ app.use(
 // 2. CORS設定
 const allowedOrigins = [
   'https://schedule-sai.vercel.app',
+  'http://127.0.0.1:8765',
+  'http://localhost:8765',
 ]
 
 app.use(
