@@ -1,0 +1,257 @@
+:root {
+  color-scheme: light;
+  font-family: "Yu Gothic", "Meiryo", sans-serif;
+  color: #333;
+  background: #f5f6fa;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  line-height: 1.65;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+.demo-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 5%;
+  background: #fff;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, .06);
+}
+
+.demo-brand {
+  color: #6c63ff;
+  font-size: 22px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.demo-account {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.demo-account button,
+.demo-add-task form button {
+  border: 0;
+  border-radius: 9px;
+  padding: 10px 16px;
+  background: #6c63ff;
+  color: white;
+}
+
+.demo-main {
+  width: min(1120px, 92%);
+  margin: 28px auto;
+}
+
+.demo-notice {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: #eeedff;
+}
+
+.demo-notice strong {
+  color: #554de0;
+}
+
+.demo-status {
+  min-height: 1.5em;
+  color: #a12622;
+}
+
+.demo-dashboard {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin: 18px 0;
+}
+
+.demo-stat,
+.demo-add-task,
+.demo-events > div,
+.demo-calendar {
+  padding: 20px;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, .05);
+}
+
+.demo-calendar {
+  margin-bottom: 18px;
+}
+
+.demo-calendar .fc {
+  max-width: 100%;
+}
+
+.demo-stat h2,
+.demo-events h2 {
+  margin: 0;
+  font-size: 17px;
+}
+
+.demo-stat p {
+  margin: 4px 0 0;
+  color: #554de0;
+  font-size: 30px;
+  font-weight: 700;
+}
+
+.demo-add-task h1 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.demo-add-task > p {
+  margin: 4px 0 16px;
+  color: #666;
+}
+
+.demo-add-task form {
+  display: grid;
+  grid-template-columns: 2fr 1.2fr 1fr 1.3fr auto;
+  align-items: end;
+  gap: 12px;
+}
+
+.demo-add-task label {
+  display: grid;
+  gap: 5px;
+  font-size: 14px;
+}
+
+.demo-add-task input,
+.demo-add-task select {
+  width: 100%;
+  min-height: 42px;
+  padding: 7px 9px;
+  border: 1px solid #ccc;
+  border-radius: 7px;
+  background: #fff;
+}
+
+.demo-add-task form button {
+  min-height: 42px;
+  white-space: nowrap;
+}
+
+.demo-events {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.demo-event-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.demo-event-card {
+  padding: 12px 14px;
+  border-left: 4px solid #6c63ff;
+  border-radius: 8px;
+  background: #f8f8ff;
+}
+
+.demo-event-card h3 {
+  margin: 0;
+  font-size: 16px;
+  overflow-wrap: anywhere;
+}
+
+.demo-event-card p {
+  margin: 4px 0 0;
+  color: #666;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.demo-event-card[data-kind="schedule"] {
+  border-left-color: #4285f4;
+}
+
+.demo-event-card[data-kind="user-task"] {
+  border-left-color: #e53935;
+}
+
+.demo-event-card button {
+  margin-top: 8px;
+  border: 0;
+  padding: 4px 0;
+  background: transparent;
+  color: #a12622;
+  text-decoration: underline;
+}
+
+@media (max-width: 760px) {
+  .demo-add-task form {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .demo-add-task form label:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .demo-add-task form button {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 560px) {
+  .demo-header {
+    align-items: flex-start;
+  }
+
+  .demo-brand {
+    font-size: 18px;
+  }
+
+  .demo-account {
+    align-items: flex-end;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 13px;
+  }
+
+  .demo-dashboard {
+    gap: 8px;
+  }
+
+  .demo-stat {
+    padding: 12px;
+  }
+
+  .demo-stat h2 {
+    font-size: 13px;
+  }
+
+  .demo-stat p {
+    font-size: 24px;
+  }
+
+  .demo-events {
+    grid-template-columns: 1fr;
+  }
+}
