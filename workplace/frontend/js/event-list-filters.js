@@ -168,10 +168,17 @@ window.EventListFilters = (() => {
     }
 
     const sortDirection = state.sortSelect.value === "date-desc" ? -1 : 1;
-    events.sort((left, right) =>
-      sortDirection *
-      (new Date(left[dateField]).getTime() - new Date(right[dateField]).getTime())
-    );
+    events.sort((left, right) => {
+      const leftTime = Date.parse(left[dateField] || "");
+      const rightTime = Date.parse(right[dateField] || "");
+      const leftHasTime = Number.isFinite(leftTime);
+      const rightHasTime = Number.isFinite(rightTime);
+
+      if (!leftHasTime || !rightHasTime) {
+        return leftHasTime === rightHasTime ? 0 : leftHasTime ? -1 : 1;
+      }
+      return sortDirection * (leftTime - rightTime);
+    });
     return events;
   }
 

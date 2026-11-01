@@ -59,6 +59,53 @@ a {
     border-radius: 10px;
 }
 
+.demo-button,
+.demo-option-list button {
+    border: 1px solid #6C63FF;
+    border-radius: 10px;
+    background: white;
+    color: #554de0;
+    padding: 10px 18px;
+    font: inherit;
+    cursor: pointer;
+}
+
+.demo-options {
+    padding: 24px 6%;
+    background: #fff;
+    text-align: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.demo-options h2 {
+    font-size: 22px;
+    margin-bottom: 6px;
+}
+
+.demo-options p {
+    color: #666;
+}
+
+.demo-option-list {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.demo-option-list button:hover,
+.demo-button:hover {
+    background: #eeedff;
+}
+
+.demo-start-button {
+    margin-left: 10px;
+    border: 1px solid #6C63FF;
+    cursor: pointer;
+    font: inherit;
+}
+
 /* =========================
    メインビジュアル
 ========================= */
@@ -231,6 +278,11 @@ footer a:hover {
         font-size: 13px;
     }
 
+    .demo-button {
+        padding: 8px 10px;
+        font-size: 13px;
+    }
+
     .hero {
         min-height: 400px;
         padding: 70px 20px;
@@ -246,5 +298,9 @@ footer a:hover {
 
     .cta h2 {
         font-size: 23px;
+    }
+
+    .demo-start-button {
+        margin: 12px 0 0;
     }
 }

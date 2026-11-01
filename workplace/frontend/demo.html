@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>デモ - Study Planner</title>
+  <link rel="stylesheet" href="css/demo.css">
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@7.1.2/skeleton.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@7.1.2/themes/monarch/theme.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@7.1.2/themes/monarch/palettes/purple.css" rel="stylesheet">
+  <script>window.API_BASE_URL = "https://schedule-backend-navy.vercel.app";</script>
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@7.1.2/all/global.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@7.1.2/themes/monarch/global.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@7.1.2/locales/ja/global.js" defer></script>
+  <script src="js/demo.js" defer></script>
+</head>
+<body>
+  <header class="demo-header">
+    <a class="demo-brand" href="index.html">Study Planner</a>
+    <div class="demo-account">
+      <span id="demoUserName">デモを読み込み中...</span>
+      <button type="button" id="demoLogoutButton">デモを終了</button>
+    </div>
+  </header>
+
+  <main class="demo-main">
+    <section class="demo-notice" aria-label="デモモードの説明">
+      <strong>デモモード</strong>
+      <span>追加した課題はこの画面を離れるか、再読み込みすると消去されます。</span>
+    </section>
+
+    <p id="demoStatus" class="demo-status" role="status" aria-live="polite"></p>
+
+    <section class="demo-dashboard" aria-label="概要">
+      <article class="demo-stat">
+        <h2>表示中の課題</h2>
+        <p id="demoTaskCount">0</p>
+      </article>
+      <article class="demo-stat">
+        <h2>表示中の予定</h2>
+        <p id="demoScheduleCount">0</p>
+      </article>
+      <article class="demo-stat">
+        <h2>参加グループ</h2>
+        <p id="demoGroupCount">0</p>
+      </article>
+    </section>
+
+    <section class="demo-calendar" aria-label="カレンダー">
+      <div id="demoCalendar"></div>
+    </section>
+
+    <section class="demo-add-task" aria-labelledby="addTaskHeading">
+      <h1 id="addTaskHeading">課題を追加</h1>
+      <p>入力内容はサーバーへ送信されず、このページを表示している間だけ保持されます。</p>
+      <form id="demoTaskForm">
+        <label>
+          課題名
+          <input id="demoTaskTitle" name="title" type="text" maxlength="100" required>
+        </label>
+        <label>
+          提出期限
+          <input id="demoTaskDeadline" name="deadline" type="date" required>
+        </label>
+        <label>
+          優先度
+          <select id="demoTaskPriority" name="priority">
+            <option value="高">高</option>
+            <option value="中" selected>中</option>
+            <option value="低">低</option>
+          </select>
+        </label>
+        <label>
+          共有先
+          <select id="demoTaskGroup" name="group"></select>
+        </label>
+        <button type="submit">課題を追加</button>
+      </form>
+    </section>
+
+    <section class="demo-events" aria-label="デモの予定と課題">
+      <div>
+        <h2>課題</h2>
+        <div id="demoTasks" class="demo-event-list"></div>
+      </div>
+      <div>
+        <h2>共有予定</h2>
+        <div id="demoSchedules" class="demo-event-list"></div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

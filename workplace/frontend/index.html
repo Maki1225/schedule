@@ -27,11 +27,24 @@
       <a href="login.html" class="login-button" data-auth-link>
         ログイン
       </a>
+      <button type="button" class="demo-button" id="demoModeButton" aria-expanded="false" aria-controls="demoModeOptions">
+        デモモード
+      </button>
     </nav>
 
   </header>
 
   <main>
+    <section id="demoModeOptions" class="demo-options" aria-label="デモプロフィール" hidden>
+      <h2>デモプロフィールを選択</h2>
+      <p>デモ中に追加した課題は、このページを離れるか再読み込みすると消去されます。</p>
+      <div class="demo-option-list">
+        <button type="button" data-demo-persona="many-tasks">課題が多い人</button>
+        <button type="button" data-demo-persona="many-schedules">予定が多い人</button>
+        <button type="button" data-demo-persona="shared-schedules">共有予定が多い人</button>
+      </div>
+      <p id="demoModeMessage" role="status" aria-live="polite"></p>
+    </section>
 
     <!-- アプリ紹介 -->
     <section class="hero">
@@ -56,6 +69,9 @@
         <a href="login.html" class="start-button" data-auth-link>
           ログインして始める
         </a>
+        <button type="button" class="start-button demo-start-button" id="heroDemoModeButton">
+          デモモードを試す
+        </button>
 
       </div>
 
