@@ -105,7 +105,11 @@ function eventsForPersona(personaId: PersonaId) {
 }
 
 async function getDemoPayload(c: AppContext) {
-  const token = getCookie(c, demoCookie)
+  const authorization = c.req.header('Authorization')
+  const bearerToken = authorization?.startsWith('Bearer ')
+    ? authorization.slice('Bearer '.length)
+    : undefined
+  const token = bearerToken || getCookie(c, demoCookie)
   if (!token) return null
 
   try {
@@ -147,7 +151,11 @@ export const DemoController = {
       maxAge: demoLifetimeSeconds,
     })
     c.header('Cache-Control', 'no-store')
-    return c.json({ message: 'デモを開始しました', user: { name: persona.name } })
+    return c.json({
+      message: 'デモを開始しました',
+      sessionToken: token,
+      user: { name: persona.name },
+    })
   },
 
   async getSession(c: AppContext) {

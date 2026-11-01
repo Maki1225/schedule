@@ -50,6 +50,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (!response.ok) {
         throw new Error(data.error || "デモを開始できませんでした。");
       }
+      if (typeof data.sessionToken !== "string" || !data.sessionToken) {
+        throw new Error("デモセッションを開始できませんでした。");
+      }
+      sessionStorage.setItem("demoSessionToken", data.sessionToken);
       window.location.href = "demo.html";
     } catch (error) {
       console.error("デモの開始に失敗しました:", error);
