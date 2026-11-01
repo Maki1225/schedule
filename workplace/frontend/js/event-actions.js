@@ -82,6 +82,9 @@ window.EventActions = (() => {
   }
 
   function canManage(event, groupRole) {
+    if (window.DemoMode?.active) {
+      return window.DemoMode.canManage(event);
+    }
     return groupRole === "admin" || (
       currentUserId !== null &&
       String(event.created_by) === String(currentUserId)

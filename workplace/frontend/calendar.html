@@ -20,6 +20,8 @@
   <link href="https://cdn.jsdelivr.net/npm/fullcalendar@7.1.2/themes/monarch/palettes/purple.css" rel="stylesheet">
   <script src="js/theme.js" defer></script>
   <script>window.API_BASE_URL = "https://schedule-backend-navy.vercel.app";</script>
+  <script src="js/demo-mode.js"></script>
+  <link rel="stylesheet" href="css/demo-mode.css">
   <style>
     body {
       visibility: hidden;
@@ -50,6 +52,10 @@
     <div class="header-right">
 
       <div id="clock"></div>
+      <div id="demoModeBadge" class="demo-mode-badge" hidden>
+        <span>デモモード</span>
+        <button type="button" id="demoModeExitButton">デモを終了</button>
+      </div>
 
       <button id="addTaskButton">
         ＋ 課題追加

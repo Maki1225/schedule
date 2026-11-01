@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import { Env } from '../types/hono'
 import { AuthController } from '../controllers/authController'
-import { authCheck } from '../middleware/authMiddleware'
+import { authCheck, rejectDemoAccess } from '../middleware/authMiddleware'
 import { GoogleDataController } from '../controllers/googleDataController'
 
 export const authRoutes = new Hono<Env>()
@@ -23,7 +23,7 @@ authRoutes.post('/google', async (c) => {
 authRoutes.get('/me', authCheck, (c) => AuthController.getMe(c))
 
 // プロフィールのニックネーム更新
-authRoutes.patch('/me', authCheck, async (c) => {
+authRoutes.patch('/me', authCheck, rejectDemoAccess, async (c) => {
   const body = await c.req.json().catch(() => ({}))
   const name = typeof body.name === 'string' ? body.name.trim() : ''
 
@@ -35,15 +35,15 @@ authRoutes.patch('/me', authCheck, async (c) => {
 })
 
 // 会員登録の削除
-authRoutes.delete('/me', authCheck, (c) => AuthController.deleteMe(c))
+authRoutes.delete('/me', authCheck, rejectDemoAccess, (c) => AuthController.deleteMe(c))
 
 // ログアウト
 authRoutes.post('/logout', (c) => AuthController.logout(c))
 
-authRoutes.get('/google/classroom/coursework', authCheck, (c) =>
+authRoutes.get('/google/classroom/coursework', authCheck, rejectDemoAccess, (c) =>
   GoogleDataController.classroomCoursework(c)
 )
-authRoutes.get('/google/calendar/events', authCheck, (c) =>
+authRoutes.get('/google/calendar/events', authCheck, rejectDemoAccess, (c) =>
   GoogleDataController.calendarEvents(c)
 )
 

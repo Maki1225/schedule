@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import { Env } from '../types/hono'
-import { authCheck } from '../middleware/authMiddleware'
+import { authCheck, rejectDemoAccess } from '../middleware/authMiddleware'
 import { EventController } from '../controllers/eventController'
 import { createEventSchema, updateEventSchema } from '../validators/eventValidators'
 
@@ -13,7 +13,7 @@ eventRoutes.use('*', authCheck)
 eventRoutes.get('/', EventController.getByGroup)
 
 // POST /api/events/
-eventRoutes.post('/', async (c) => {
+eventRoutes.post('/', rejectDemoAccess, async (c) => {
   const body = await c.req.json().catch(() => ({}))
   const result = createEventSchema.safeParse(body)
 
@@ -26,7 +26,7 @@ eventRoutes.post('/', async (c) => {
 })
 
 // PUT /api/events/:id  <-- 追加
-eventRoutes.put('/:id', async (c) => {
+eventRoutes.put('/:id', rejectDemoAccess, async (c) => {
   const body = await c.req.json().catch(() => ({}))
   const result = updateEventSchema.safeParse(body)
 
@@ -39,6 +39,6 @@ eventRoutes.put('/:id', async (c) => {
 })
 
 // DELETE /api/events/:id
-eventRoutes.delete('/:id', EventController.delete)
+eventRoutes.delete('/:id', rejectDemoAccess, EventController.delete)
 
 export default eventRoutes

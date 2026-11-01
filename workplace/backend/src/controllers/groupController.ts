@@ -16,6 +16,16 @@ export const GroupController = {
   // グループ一覧
   async list(c: Context<Env>) {
     const userId = getUserId(c)
+    if (c.get('jwtPayload').mode === 'demo') {
+      const groups = await sql`
+        SELECT g.id, g.name, gm.role
+        FROM groups g
+        JOIN group_members gm ON gm.group_id = g.id
+        WHERE gm.user_id = ${userId}
+        ORDER BY g.id DESC
+      `
+      return c.json({ groups })
+    }
 
     const groups = await sql`
       SELECT g.id, g.name, g.invite_code, gm.role
