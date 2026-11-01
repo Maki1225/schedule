@@ -4,16 +4,87 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
-  <title>デモ - Study Planner</title>
+  <title>クラスのつながり - Study Planner</title>
+  <link rel="stylesheet" href="css/demo.css">
+  <script>window.API_BASE_URL = "https://schedule-backend-navy.vercel.app";</script>
 </head>
 <body>
-  <p>通常のカレンダー画面を開いています...</p>
-  <script>
-    window.location.replace(
-      sessionStorage.getItem("demoSessionToken")
-        ? "calendar.html?demo=1"
-        : "index.html"
-    );
-  </script>
+  <header class="demo-header">
+    <a class="demo-brand" href="index.html">Study Planner</a>
+    <nav class="demo-nav" aria-label="デモページ">
+      <a href="demo.html" aria-current="page">クラスのつながり</a>
+      <a href="demo-tasks.html">課題・チャット</a>
+    </nav>
+    <div class="demo-account">
+      <span id="demoUserName">デモ情報を読み込み中...</span>
+      <button id="demoLogoutButton" type="button">デモを終了</button>
+    </div>
+  </header>
+
+  <main class="demo-main">
+    <section class="demo-notice" aria-label="デモの注意事項">
+      <strong>デモモード</strong>
+      <span>課題とチャット履歴はデモページ間で共有され、再読み込み・ページを離れると消去されます。</span>
+    </section>
+    <p id="demoStatus" class="demo-status" role="status" aria-live="polite"></p>
+
+    <section class="demo-section" aria-labelledby="relationshipTitle">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">CLASS INSIGHTS</p>
+          <h1 id="relationshipTitle">クラスのつながり</h1>
+          <p>人物を選ぶとプロフィールを確認できます。</p>
+        </div>
+        <span class="group-pill">高専・同じクラス</span>
+      </div>
+      <div class="relation-map" aria-label="実験班とグループワークを通じた4人のつながり">
+        <svg class="relation-lines" viewBox="0 0 800 360" role="img" aria-label="4人が実験班とグループワークでつながっています">
+          <line x1="140" y1="90" x2="400" y2="180"></line>
+          <line x1="660" y1="90" x2="400" y2="180"></line>
+          <line x1="250" y1="290" x2="400" y2="180"></line>
+          <line x1="550" y1="290" x2="400" y2="180"></line>
+          <line class="relation-secondary" x1="140" y1="90" x2="250" y2="290"></line>
+          <line class="relation-secondary" x1="660" y1="90" x2="550" y2="290"></line>
+        </svg>
+        <button class="map-person map-yuito" type="button" data-profile-id="yuito" aria-label="ゆいとのプロフィールを表示">
+          <span class="person-avatar avatar-violet">ゆ</span><span class="map-name">ゆいと</span>
+        </button>
+        <button class="map-person map-aoi" type="button" data-profile-id="aoi" aria-label="あおいのプロフィールを表示">
+          <span class="person-avatar avatar-blue">あ</span><span class="map-name">あおい</span>
+        </button>
+        <button class="map-person map-haruhi" type="button" data-profile-id="haruhi" aria-label="はるひのプロフィールを表示">
+          <span class="person-avatar avatar-green">は</span><span class="map-name">はるひ</span>
+        </button>
+        <button class="map-person map-minami" type="button" data-profile-id="minami" aria-label="みなみのプロフィールを表示">
+          <span class="person-avatar avatar-orange">み</span><span class="map-name">みなみ</span>
+        </button>
+        <div class="map-group map-group-lab"><span>🧪</span> 実験班</div>
+        <div class="map-group map-group-work"><span>📝</span> グループワーク</div>
+      </div>
+    </section>
+
+    <section id="memberSection" class="demo-section" aria-labelledby="membersTitle">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">MEMBERS</p>
+          <h2 id="membersTitle">メンバー</h2>
+        </div>
+        <p>カードからプロフィール確認・ワンタップログイン</p>
+      </div>
+      <div id="demoProfiles" class="profile-grid"></div>
+    </section>
+  </main>
+
+  <dialog id="profileDialog" class="profile-dialog" aria-labelledby="profileDialogName">
+    <button id="profileDialogClose" class="dialog-close" type="button" aria-label="閉じる">×</button>
+    <p class="eyebrow">MEMBER PROFILE</p>
+    <span id="profileDialogAvatar" class="person-avatar avatar-violet" aria-hidden="true"></span>
+    <h2 id="profileDialogName"></h2>
+    <p id="profileDialogBirthday" class="dialog-birthday"></p>
+    <p id="profileDialogRole" class="dialog-role"></p>
+    <p class="dialog-task-count">現在の課題数：<strong id="profileDialogTaskCount">0</strong> 件</p>
+  </dialog>
+
+  <script src="js/demo.js"></script>
 </body>
 </html>
