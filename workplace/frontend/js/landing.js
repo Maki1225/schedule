@@ -41,7 +41,7 @@ document.addEventListener("DOMContentLoaded", () => {
         throw new Error("デモセッションを開始できませんでした。");
       }
       sessionStorage.setItem("demoSessionToken", data.sessionToken);
-      window.location.href = "calendar.html?demo=1";
+      window.location.href = "demo.html";
     } catch (error) {
       console.error("デモの開始に失敗しました:", error);
       demoMessage.textContent = error.message || "デモを開始できませんでした。";

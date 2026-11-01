@@ -9,17 +9,29 @@ const demoCookie = 'demo_token'
 const demoLifetimeSeconds = 30 * 60
 
 const personas = {
-  'many-tasks': {
-    name: '課題が多い人',
-    email: 'minami.kosen.demo@gmail.com',
+  yuito: {
+    name: 'ゆいと',
+    email: 'yuito.kosen.demo@gmail.com',
+    birthday: '2010-02-14',
+    role: 'しっかり者の班長タイプ。実験レポートや制作課題を主導し、提出期限に追われがち。',
   },
-  'many-schedules': {
-    name: '予定が多い人',
+  aoi: {
+    name: 'あおい',
     email: 'aoi108.demo@gmail.com',
+    birthday: '2099-08-22',
+    role: 'マイペースな情報収集型。テスト対策ノートの共有や講義予定の確認が中心。',
   },
-  'shared-schedules': {
-    name: '共有予定が多い人',
+  haruhi: {
+    name: 'はるひ',
     email: 'haruhi.kosen.demo@gmail.com',
+    birthday: '2009-04-09',
+    role: '効率重視の助け合いタイプ。課題の消化率が高く、進捗報告や過去問共有を担当。',
+  },
+  minami: {
+    name: 'みなみ',
+    email: 'ryota.kosen.demo@gmail.com',
+    birthday: '2009-07-18',
+    role: '部活と課題を両立中のムードメーカー。未完了の提出物が多く、仲間のリマインドを受ける。',
   },
 } as const
 
@@ -131,16 +143,53 @@ export const DemoController = {
       WHERE gm.user_id = ${user.id}
       ORDER BY e.start_time ASC
     `
+    const profileUsers = await sql`
+      SELECT id, email
+      FROM users
+      WHERE email = ${personas.yuito.email}
+        OR email = ${personas.aoi.email}
+        OR email = ${personas.haruhi.email}
+        OR email = ${personas.minami.email}
+    `
+    const taskCounts = await sql`
+      SELECT created_by, COUNT(*)::int AS task_count
+      FROM events
+      WHERE description LIKE '[課題]%'
+        AND created_by IN (
+          SELECT id
+          FROM users
+          WHERE email = ${personas.yuito.email}
+            OR email = ${personas.aoi.email}
+            OR email = ${personas.haruhi.email}
+            OR email = ${personas.minami.email}
+        )
+      GROUP BY created_by
+    `
+    const taskCountByUser = new Map(
+      taskCounts.map((row) => [String(row.created_by), Number(row.task_count)])
+    )
+    const profileUserIds = new Map(
+      profileUsers.map((profileUser) => [profileUser.email, String(profileUser.id)])
+    )
+    const profiles = Object.entries(personas).map(([id, profile]) => ({
+      id,
+      name: profile.name,
+      email: profile.email,
+      birthday: profile.birthday,
+      role: profile.role,
+      taskCount: taskCountByUser.get(profileUserIds.get(profile.email) || '') || 0,
+    }))
 
     c.header('Cache-Control', 'no-store')
     return c.json({
       user: {
         id: user.id,
-        name: user.name || persona.name,
+        name: persona.name,
         email: user.email,
       },
       groups,
       events,
+      profiles,
     })
   },
 

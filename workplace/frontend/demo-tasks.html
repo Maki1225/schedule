@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>課題・チャット - Study Planner</title>
+  <link rel="stylesheet" href="css/demo.css">
+  <script>window.API_BASE_URL = "https://schedule-backend-navy.vercel.app";</script>
+</head>
+<body>
+  <header class="demo-header">
+    <a class="demo-brand" href="index.html">Study Planner</a>
+    <nav class="demo-nav" aria-label="デモページ">
+      <a href="demo.html">クラスのつながり</a>
+      <a href="demo-tasks.html" aria-current="page">課題・チャット</a>
+    </nav>
+    <div class="demo-account">
+      <span id="demoUserName">デモ情報を読み込み中...</span>
+      <button id="demoLogoutButton" type="button">デモを終了</button>
+    </div>
+  </header>
+
+  <main class="demo-main">
+    <section class="demo-notice" aria-label="デモの注意事項">
+      <strong>デモモード</strong>
+      <span>課題とチャット履歴はデモページ間で共有され、再読み込み・ページを離れると消去されます。</span>
+    </section>
+    <p id="demoStatus" class="demo-status" role="status" aria-live="polite"></p>
+
+    <section class="demo-section" aria-labelledby="tasksTitle">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">SHARED TASKS</p>
+          <h1 id="tasksTitle">課題・共有予定</h1>
+        </div>
+        <div class="task-counts">
+          <span>課題 <strong id="demoTaskCount">0</strong></span>
+          <span>共有予定 <strong id="demoScheduleCount">0</strong></span>
+        </div>
+      </div>
+      <form id="demoTaskForm" class="task-form">
+        <label>
+          課題名
+          <input id="demoTaskTitle" name="title" type="text" maxlength="100" placeholder="例：実験レポートの考察" required>
+        </label>
+        <label>
+          提出期限
+          <input id="demoTaskDeadline" name="deadline" type="date" required>
+        </label>
+        <label>
+          共有先
+          <select id="demoTaskGroup" name="group" required>
+            <option value="">グループを読み込み中...</option>
+          </select>
+        </label>
+        <button type="submit">課題を追加</button>
+      </form>
+      <div class="event-columns">
+        <section class="event-panel" aria-labelledby="taskListTitle">
+          <h2 id="taskListTitle">課題</h2>
+          <div id="demoTasks" class="event-list"></div>
+        </section>
+        <section class="event-panel" aria-labelledby="scheduleListTitle">
+          <h2 id="scheduleListTitle">共有予定</h2>
+          <div id="demoSchedules" class="event-list"></div>
+        </section>
+      </div>
+    </section>
+
+    <section class="demo-section" aria-labelledby="chatTitle">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">GROUP CHAT</p>
+          <h2 id="chatTitle">メンバーとのチャット</h2>
+          <p>デモ内の簡易チャットです。1セッションで送信できるのは10通までです。</p>
+        </div>
+        <span class="message-limit"><strong id="demoMessageCount">0</strong> / 10 通</span>
+      </div>
+      <div class="chat-panel">
+        <label class="chat-partner-label" for="demoChatPartner">相手を選択</label>
+        <select id="demoChatPartner"></select>
+        <div id="demoChatMessages" class="chat-messages" role="log" aria-live="polite" aria-relevant="additions text"></div>
+        <form id="demoChatForm" class="chat-form">
+          <label class="visually-hidden" for="demoChatInput">メッセージ</label>
+          <input id="demoChatInput" type="text" maxlength="500" placeholder="メッセージを入力" autocomplete="off" required>
+          <button id="demoChatSend" type="submit">送信</button>
+        </form>
+        <p class="chat-guidance">不適切な表現は送信できません。送受信履歴はデモ画面を離れると消去されます。</p>
+      </div>
+    </section>
+  </main>
+
+  <script src="js/demo.js"></script>
+</body>
+</html>
