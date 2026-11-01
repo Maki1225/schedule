@@ -11,10 +11,12 @@
   let groups = [];
   let user = null;
   let nextEventId = 0;
+  let exiting = false;
 
   window.DemoMode = {
     active: true,
     canManage: (event) => String(event.id || "").startsWith("demo-ephemeral-"),
+    expire: () => restoreGroupSelection(),
   };
 
   if (!sessionStorage.getItem("demoPreviousGroup")) {
@@ -142,8 +144,7 @@
     }
 
     if (response.status === 401 && !pathname.startsWith("/api/demo/")) {
-      sessionStorage.removeItem(tokenKey);
-      window.location.replace("index.html");
+      restoreGroupSelection();
       return response;
     }
 
@@ -194,6 +195,8 @@
   };
 
   function restoreGroupSelection() {
+    if (exiting) return;
+    exiting = true;
     try {
       const previous = JSON.parse(sessionStorage.getItem("demoPreviousGroup") || "{}");
       if (previous.id) localStorage.setItem("selectedGroupId", previous.id);
