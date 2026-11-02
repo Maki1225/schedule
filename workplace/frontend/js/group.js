@@ -237,7 +237,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (events.length === 0) {
       const empty = document.createElement("p");
       empty.className = "muted";
-      empty.textContent = isTask ? "共有中のタスクはありません。" : "共有中の予定はありません。";
+      empty.textContent = isTask ? "共有中の課題はありません。" : "共有中の予定はありません。";
       container.appendChild(empty);
       return;
     }
