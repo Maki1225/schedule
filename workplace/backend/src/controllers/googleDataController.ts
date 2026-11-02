@@ -4,6 +4,10 @@ import { UserModel } from '../models/userModel'
 import { getDecryptedTokens } from '../utils/encryptTokens'
 import { Env } from '../types/hono'
 
+const GOOGLE_API_TIMEOUT_MS = 15_000 // 15秒
+const MAX_COURSES_PER_REQUEST = 50 // 1回のリクエストで取得するコース数上限
+const MAX_CONCURRENT_REQUESTS = 5 // 並行リクエスト数上限
+
 async function getAccessToken(userId: string | number): Promise<string> {
   const savedTokens = await UserModel.findGoogleTokens(userId)
   if (!savedTokens) {
@@ -56,10 +60,14 @@ async function getAccessToken(userId: string | number): Promise<string> {
   return accessToken.token
 }
 
-async function googleGet<T>(accessToken: string, url: URL): Promise<T> {
-  const response = await fetch(url, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  })
+async function googleGet<T>(accessToken: string, url: URL, timeoutMs = GOOGLE_API_TIMEOUT_MS): Promise<T> {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
+  try {
+    const response = await fetch(url, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      signal: controller.signal,
+    })
   const body = await response.json().catch(() => ({})) as {
     error?: { message?: string }
   }
@@ -81,7 +89,10 @@ async function googleGet<T>(accessToken: string, url: URL): Promise<T> {
     }
     throw new Error(detail || `Google APIエラー (${response.status})`)
   }
-  return body as T
+    return body as T
+  } finally {
+    clearTimeout(timeoutId)
+  }
 }
 
 async function withGoogleData<T>(
@@ -161,26 +172,31 @@ export const GoogleDataController = {
         accessToken,
         coursesUrl
       )
-      const courses = coursesResult.courses || []
+      const courses = (coursesResult.courses || []).slice(0, MAX_COURSES_PER_REQUEST)
       const coursework: Array<GoogleCoursework & { courseId: string; courseName: string }> = []
 
-      for (const course of courses) {
-        const courseworkUrl = new URL(
-          `https://classroom.googleapis.com/v1/courses/${encodeURIComponent(course.id)}/courseWork`
-        )
-        courseworkUrl.searchParams.set('courseWorkStates', 'PUBLISHED')
-        courseworkUrl.searchParams.set('pageSize', '100')
-        const result = await googleGet<{ courseWork?: GoogleCoursework[] }>(
-          accessToken,
-          courseworkUrl
-        )
-        for (const item of result.courseWork || []) {
-          coursework.push({
-            ...item,
-            courseId: course.id,
-            courseName: course.name,
+      // 並行リクエストをバッチ処理（メモリ使用量とAPI負荷の両方を制御）
+      for (let i = 0; i < courses.length; i += MAX_CONCURRENT_REQUESTS) {
+        const batch = courses.slice(i, i + MAX_CONCURRENT_REQUESTS)
+        const results = await Promise.all(
+          batch.map(async (course) => {
+            const courseworkUrl = new URL(
+              `https://classroom.googleapis.com/v1/courses/${encodeURIComponent(course.id)}/courseWork`
+            )
+            courseworkUrl.searchParams.set('courseWorkStates', 'PUBLISHED')
+            courseworkUrl.searchParams.set('pageSize', '100')
+            const result = await googleGet<{ courseWork?: GoogleCoursework[] }>(
+              accessToken,
+              courseworkUrl
+            )
+            return (result.courseWork || []).map((item) => ({
+              ...item,
+              courseId: course.id,
+              courseName: course.name,
+            }))
           })
-        }
+        )
+        coursework.push(...results.flat())
       }
 
       return {

@@ -5,7 +5,7 @@ const isValidDateString = (val: string): boolean => !isNaN(new Date(val).getTime
 const baseEventSchema = z.object({
   group_id: z.number({ message: 'グループIDは必須です' }),
   title: z.string().min(1, 'タイトルを入力してください').max(100, 'タイトルは100文字以内で入力してください'),
-  description: z.string().nullable().optional(),
+  description: z.string().max(1024 * 1024, '説明は1MB以内で入力してください').nullable().optional(),
   start_time: z.string().refine(isValidDateString, {
     message: '正しい日時フォーマット(ISO8601)で指定してください',
   }),

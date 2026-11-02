@@ -44,7 +44,7 @@ GOOGLE_CLIENT_ID="your_google_client_id"
 `backend/migrations/20261101_create_group_chat_messages.sql` を一度実行してください。
 メッセージはグループ単位で保存され、課題の追加通知も同じテーブルに記録されます。
 
-タスクの作成者・最終編集者と編集時刻を記録するため、Neon PostgreSQLで
+課題・予定の作成者・最終編集者と編集時刻を記録するため、Neon PostgreSQLで
 `backend/migrations/20261101_add_event_audit_metadata.sql` も一度実行してください。
 
 ログアウト時に発行済みJWTを失効させるため、Neon PostgreSQLで

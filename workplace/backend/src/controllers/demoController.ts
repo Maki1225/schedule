@@ -1,4 +1,5 @@
 import { getCookie, setCookie, deleteCookie } from 'hono/cookie'
+import { randomBytes } from 'node:crypto'
 import { sign, verify } from 'hono/jwt'
 import { AppContext, JWTPayload } from '../types/hono'
 import { getJwtSecret } from './authController'
@@ -90,6 +91,29 @@ export const DemoController = {
       return c.json({ error: 'このデモアカウントはまだ利用できません。' }, 404)
     }
 
+    // デモ用グループを取得または作成
+    let [demoGroup] = await sql`
+      SELECT id, name FROM groups WHERE is_demo = true AND created_by = ${user.id}
+      ORDER BY id DESC LIMIT 1
+    `
+
+    if (!demoGroup) {
+      const inviteCode = randomBytes(16).toString('hex').toUpperCase()
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+      const created = await sql`
+        INSERT INTO groups (name, invite_code, invite_code_expires_at, created_by, is_demo)
+        VALUES (${persona.name + 'のデモグループ'}, ${inviteCode}, ${expiresAt}, ${user.id}, true)
+        RETURNING id, name
+      `
+      demoGroup = created[0]
+
+      await sql`
+        INSERT INTO group_members (group_id, user_id, role)
+        VALUES (${demoGroup.id}, ${user.id}, 'admin')
+        ON CONFLICT (group_id, user_id) DO NOTHING
+      `
+    }
+
     const token = await sign(
       {
         id: user.id,
@@ -113,6 +137,7 @@ export const DemoController = {
       message: 'デモを開始しました',
       sessionToken: token,
       user: { name: persona.name },
+      groupId: demoGroup.id,  // デモ用グループIDを追加
     })
   },
 
@@ -213,6 +238,7 @@ export const DemoController = {
       SELECT g.id, g.name, g.invite_code
       FROM groups g
       WHERE UPPER(g.invite_code) = ${inviteCode}
+        AND g.is_demo = true
         AND EXISTS (
           SELECT 1
           FROM group_members gm

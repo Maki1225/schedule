@@ -237,7 +237,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (events.length === 0) {
       const empty = document.createElement("p");
       empty.className = "muted";
-      empty.textContent = isTask ? "共有中のタスクはありません。" : "共有中の予定はありません。";
+      empty.textContent = isTask ? "共有中の課題はありません。" : "共有中の予定はありません。";
       container.appendChild(empty);
       return;
     }
@@ -289,10 +289,44 @@ document.addEventListener("DOMContentLoaded", async () => {
     calendarGroupTitle.textContent = `${group.name || "グループ"}のカレンダー`;
     calendarViewTab.disabled = false;
 
+    const isAdmin = group.role === "admin";
+
+    // 管理者用ボタンの表示制御
+    const rotateInviteCodeBtn = document.getElementById("rotateInviteCode");
+    if (rotateInviteCodeBtn) {
+      rotateInviteCodeBtn.hidden = !isAdmin;
+    }
+
     groupMembers.replaceChildren();
     members.forEach((member) => {
       const item = document.createElement("li");
-      item.textContent = `${member.name || member.email || "メンバー"}（${member.role === "admin" ? "管理者" : "メンバー"}）`;
+      const roleText = member.role === "admin" ? "管理者" : "メンバー";
+      item.textContent = `${member.name || member.email || "メンバー"}（${roleText}）`;
+
+      // 管理者のみ、他のメンバーに削除ボタンを表示
+      // 自分自身（グループ作成者）や管理者は削除不可
+      if (isAdmin && member.role !== "admin" && member.id !== group.created_by) {
+        const removeBtn = document.createElement("button");
+        removeBtn.type = "button";
+        removeBtn.className = "remove-member-btn";
+        removeBtn.textContent = "削除";
+        removeBtn.title = "メンバーを削除";
+        removeBtn.onclick = async (e) => {
+          e.stopPropagation();
+          if (!confirm(`${member.name || member.email}さんをグループから削除しますか？`)) return;
+          try {
+            await apiRequest(`/api/groups/${group.id}/members/${member.id}`, {
+              method: "DELETE",
+            });
+            // 再読み込みして一覧を更新
+            selectGroup(group.id);
+          } catch (error) {
+            setGroupMessage(error.message || "メンバーの削除に失敗しました。", true);
+          }
+        };
+        item.appendChild(removeBtn);
+      }
+
       groupMembers.appendChild(item);
     });
 
@@ -609,6 +643,34 @@ document.addEventListener("DOMContentLoaded", async () => {
       setGroupMessage(`招待コード：${code}（手動でコピーしてください）`);
     }
   });
+
+  // 招待コード再発行ボタンのイベントリスナー
+  const rotateInviteCodeBtn = document.getElementById("rotateInviteCode");
+  if (rotateInviteCodeBtn) {
+    rotateInviteCodeBtn.addEventListener("click", async () => {
+      const group = groups.find((item) => String(item.id) === selectedGroupId);
+      if (!group) return;
+
+      if (!confirm("招待コードを再発行しますか？新しいコードに置き換えられ、古いコードは無効になります。")) return;
+
+      rotateInviteCodeBtn.disabled = true;
+      rotateInviteCodeBtn.textContent = "再発行中...";
+      try {
+        const data = await apiRequest(`/api/groups/${group.id}/invite-code/rotate`, {
+          method: "POST",
+        });
+        setGroupMessage("招待コードを再発行しました。");
+        // グループ情報を再取得して表示を更新
+        selectGroup(group.id);
+      } catch (error) {
+        console.error("招待コード再発行エラー:", error);
+        setGroupMessage(error.message || "招待コードの再発行に失敗しました。", true);
+      } finally {
+        rotateInviteCodeBtn.disabled = false;
+        rotateInviteCodeBtn.textContent = "招待コード再発行";
+      }
+    });
+  }
 
   leaveGroupButton.addEventListener("click", async () => {
     const group = groups.find((item) => String(item.id) === selectedGroupId);

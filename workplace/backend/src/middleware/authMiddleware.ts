@@ -1,8 +1,9 @@
-import { Context, Next } from 'hono'
+import type { Context, Next } from 'hono'
 import { getCookie } from 'hono/cookie'
 import { verify } from 'hono/jwt'
 import { Env, JWTPayload } from '../types/hono'
 import { UserModel } from '../models/userModel'
+import { getJwtSecret } from '../controllers/authController'
 
 type TokenVersionLookup = (id: string | number) => Promise<number | null>
 
@@ -20,7 +21,9 @@ export function createAuthCheck(
       return c.json({ error: '認証トークンがありません' }, 401)
     }
 
-    const secret = process.env.JWT_SECRET || 'your-secret-key'
+    // JWT_SECRET バリデーションがパスした秘密鍵を使用
+    const secret = getJwtSecret()
+
     let payload: Awaited<ReturnType<typeof verify>>
     try {
       payload = await verify(token, secret, 'HS256')

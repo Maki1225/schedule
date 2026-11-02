@@ -4,7 +4,7 @@ import { serve } from '@hono/node-server'
 import { secureHeaders } from 'hono/secure-headers'
 import { cors } from 'hono/cors'
 import { Env } from './src/types/hono'
-import { createOriginGuard, getAllowedOrigins } from './src/middleware/requestSecurity'
+import { createOriginGuard, getAllowedOrigins, requireJsonContentType } from './src/middleware/requestSecurity'
 import { apiWriteRateLimit } from './src/middleware/rateLimit'
 import { bodySizeLimit } from './src/middleware/bodyLimit'
 import { getJwtSecret } from './src/controllers/authController';
@@ -32,6 +32,7 @@ const allowedOrigins = getAllowedOrigins()
 
 app.use(
   '/api/*',
+  requireJsonContentType,
   createOriginGuard(allowedOrigins),
   cors({
     origin: (origin) => {
@@ -55,7 +56,9 @@ app.onError((err, c) => {
   const errorId = Math.random().toString(36).slice(-8)
   console.error(`${ERROR_LOG_PREFIX} [errorId=${errorId}]:`, err)
 
-  const isProduction = process.env.NODE_ENV === 'production'
+  // Vercel 環境でも NODE_ENV が設定されない場合があるため VERCEL 変数もチェック
+  const isProduction =
+    process.env.NODE_ENV === 'production' || process.env.VERCEL === '1'
 
   if (isProduction) {
     return c.json(
