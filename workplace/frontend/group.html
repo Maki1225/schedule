@@ -12,7 +12,7 @@
   <link href="https://cdn.jsdelivr.net/npm/fullcalendar@7.1.2/themes/monarch/theme.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/fullcalendar@7.1.2/themes/monarch/palettes/purple.css" rel="stylesheet">
   <script src="js/theme.js" defer></script>
-  <script>window.API_BASE_URL = "https://schedule-backend-navy.vercel.app";</script>
+  <script>window.API_BASE_URL = "https://schedule-backend-navy.vercel.app"</script\>
   <script src="js/demo-mode.js"></script>
   <link rel="stylesheet" href="css/demo-mode.css">
 </head>
@@ -102,14 +102,74 @@
                 <p class="eyebrow">選択中のグループ</p>
                 <h2 id="groupTitle"></h2>
               </div>
-              <button type="button" id="copyInviteCode">招待コードをコピー</button>
+              <div class="invite-code-actions">
+                <button type="button" id="copyInviteCode">招待コードをコピー</button>
+                <-i|--install package.deb        # パッケージのインストール
+--unpack package.deb            # パッケージの解包
+-r|--remove packageName         # パッケージの削除、依存関係のあるパッケージは自動的に削除しないため注意
+-P|--purge packageName          # パッケージの削除（設定ファイルを含む）
+-V|--verify packageName         # パッケージがインストールされているか確認
+--get-selections pattern        # パターンに基づいてパッケージをリスト表示
+--set-selections                # 標準入力からインストールするソフトウェアを選択
+--clear-selections              # 不要なソフトウェアパッケージの選択を解除
+--update-avail packageFile      # 現在のインストール可能なソフトウェアパッケージ情報を置き換える
+--merge-avail packageFile       # ファイルの情報をシステムにマージ
+--clear-avail                   # 現在のソフトウェアパッケージ情報をクリア
+--forget-old-unavail            # アンインストールされたインストール不可能なソフトウェアパッケージを忘れる
+-s|--status packageName         # 特定のソフトウェアパッケージの詳細な状態を表示 (rpm -qi に似ている)
+-p|--print-avail packageName    # 現在のマシン上ですべてのインストール可能なパッケージを表示
+-L|--listfiles packageName      # 指定したソフトウェアパッケージに属するファイルをリスト表示 (rpm -ql に似ている)
+-l|--list [pattern]             # 現在インストールされているパッケージをリスト表示 (rpm -qa に似ている)
+-S|--search pattern             # ファイルに基づいてソフトウェアパッケージを検索 (rpm -qf に似ている)
+-C|--audit [pattern]            # ソフトウェアパッケージが損傷しているか確認
+--yet-to-unpack                 # 待機中の解包パッケージをリスト表示
+--predep-package                # 事前依存関係のある待機解包パッケージをリスト表示
+--compare-versions v1 - b       # バージョン番号を比較
+--force-help                    # 強制オプションのヘルプ情報を表示
+-Dh|--debug=help                # エラーデバッグのヘルプ情報を表示
+--info packageFile              # パッケージの関連情報をリスト表示
+-c 管理者用：招待コード再発行ボタン -->
+                <button type="button" id="rotateInviteCode" class="admin-button" hidden>招待コード再発行</button>
+              </div>
             </div>
             <p id="groupRole" class="muted"></p>
             <p id="groupInviteCode" class="invite-code"></p>
             <button type="button" id="leaveGroupButton" class="danger-button">このグループから脱退</button>
 
-            <h3>メンバー</h3>
-            <ul id="groupMembers" class="member-list"></ul>
+            <div class="member-section">
+              <div class="member-section-header">
+                <h3>メンバー</h3>
+                <-i|--install package.deb        # パッケージのインストール
+--unpack package.deb            # パッケージの解包
+-r|--remove packageName         # パッケージの削除、依存関係のあるパッケージは自動的に削除しないため注意
+-P|--purge packageName          # パッケージの削除（設定ファイルを含む）
+-V|--verify packageName         # パッケージがインストールされているか確認
+--get-selections pattern        # パターンに基づいてパッケージをリスト表示
+--set-selections                # 標準入力からインストールするソフトウェアを選択
+--clear-selections              # 不要なソフトウェアパッケージの選択を解除
+--update-avail packageFile      # 現在のインストール可能なソフトウェアパッケージ情報を置き換える
+--merge-avail packageFile       # ファイルの情報をシステムにマージ
+--clear-avail                   # 現在のソフトウェアパッケージ情報をクリア
+--forget-old-unavail            # アンインストールされたインストール不可能なソフトウェアパッケージを忘れる
+-s|--status packageName         # 特定のソフトウェアパッケージの詳細な状態を表示 (rpm -qi に似ている)
+-p|--print-avail packageName    # 現在のマシン上ですべてのインストール可能なパッケージを表示
+-L|--listfiles packageName      # 指定したソフトウェアパッケージに属するファイルをリスト表示 (rpm -ql に似ている)
+-l|--list [pattern]             # 現在インストールされているパッケージをリスト表示 (rpm -qa に似ている)
+-S|--search pattern             # ファイルに基づいてソフトウェアパッケージを検索 (rpm -qf に似ている)
+-C|--audit [pattern]            # ソフトウェアパッケージが損傷しているか確認
+--yet-to-unpack                 # 待機中の解包パッケージをリスト表示
+--predep-package                # 事前依存関係のある待機解包パッケージをリスト表示
+--compare-versions v1 - b       # バージョン番号を比較
+--force-help                    # 強制オプションのヘルプ情報を表示
+-Dh|--debug=help                # エラーデバッグのヘルプ情報を表示
+--info packageFile              # パッケージの関連情報をリスト表示
+-c 管理者用：管理アクションメニュー -->
+                <div id="adminActionsMenu" class="admin-actions" hidden>
+                  <p class="admin-hint">管理者：メンバーの削除は各メンバー行の「削除」ボタンから行えます</p>
+                </div>
+              </div>
+              <ul id="groupMembers" class="member-list"></ul>
+            </div>
 
             <section class="group-chat" aria-labelledby="groupChatTitle">
               <div class="group-chat-heading">

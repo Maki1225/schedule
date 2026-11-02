@@ -8,6 +8,7 @@ import { createEventSchema } from '../validators/eventValidators'
 import { GroupChatController } from '../controllers/groupChatController'
 import { requireJsonContentType } from '../middleware/requestSecurity'
 import { groupInviteCodeRateLimit } from '../middleware/rateLimit'
+import { apiWriteRateLimit } from '../middleware/rateLimit'
 
 const groupRoutes = new Hono<Env>()
 
@@ -30,5 +31,9 @@ groupRoutes.post('/:id/events', requireJsonContentType, authCheck, rejectDemoAcc
 
   return GroupController.createEvent(c, result.data)
 })
+// 招待コード再発行（管理者のみ）
+groupRoutes.post('/:id/invite-code/rotate', requireJsonContentType, authCheck, rejectDemoAccess, (c) => GroupController.rotateInviteCode(c))
+// メンバー削除（管理者のみ）
+groupRoutes.delete('/:id/members/:memberId', authCheck, rejectDemoAccess, (c) => GroupController.removeMember(c, Number(c.req.param('memberId'))))
 
 export default groupRoutes

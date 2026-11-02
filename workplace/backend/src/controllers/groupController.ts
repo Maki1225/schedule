@@ -1,4 +1,3 @@
-
 import { Context } from 'hono'
 import { sql } from '../config/db'
 import { Env } from '../types/hono'
@@ -11,7 +10,8 @@ function getUserId(c: Context<Env>) {
 }
 
 function makeInviteCode() {
-  return randomBytes(4).toString('hex').toUpperCase()
+  // 128-bit (16 bytes) = 32 hex characters, much stronger than 32-bit (4 bytes = 8 hex chars)
+  return randomBytes(16).toString('hex').toUpperCase()
 }
 
 export const GroupController = {
@@ -71,10 +71,13 @@ export const GroupController = {
 
     const inviteCode = makeInviteCode()
 
+    // 有効期限は作成日から7日間（必要に応じて調整）
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+
     const created = await sql`
-      INSERT INTO groups (name, invite_code, created_by)
-      VALUES (${name}, ${inviteCode}, ${userId})
-      RETURNING id, name, invite_code
+      INSERT INTO groups (name, invite_code, invite_code_expires_at, created_by)
+      VALUES (${name}, ${inviteCode}, ${expiresAt}, ${userId})
+      RETURNING id, name, invite_code, invite_code_expires_at
     `
 
     const group = created[0]
@@ -124,67 +127,109 @@ export const GroupController = {
       ORDER BY gm.role, u.name
     `
 
-    const group: Record<string, unknown> = { ...result[0], role: access[0].role }
-    if (this.isDemoUser(c)) {
-      delete group.invite_code
-    }
+    const group: Record<string, unknown> = { ...result[0], role: access[0]?.role }
 
-    return c.json({
-      group,
-      members
-    })
+    return c.json({ group, members })
   },
 
   // 招待コードで参加
   async join(c: Context<Env>) {
     const userId = getUserId(c)
-    const body = await c.req.json().catch(() => ({}))
-    const inviteCode =
-      typeof body.inviteCode === 'string'
-        ? body.inviteCode.trim().toUpperCase()
-        : ''
+    const inviteCode = (c.req.param('inviteCode') || '').trim().toUpperCase()
 
-    if (!inviteCode) {
-      return c.json({ error: '招待コードを入力してください' }, 400)
+    if (!inviteCode || inviteCode.length > 32) {
+      return c.json({ error: '招待コードが不正です。' }, 400)
     }
 
-    const found = await sql`
-      SELECT id, name, invite_code FROM groups
-      WHERE invite_code = ${inviteCode}
+    // グループ検索（有効期限・使用済みチェック含む）
+    const [group] = await sql`
+      SELECT g.id, g.name, g.invite_code, g.invite_code_expires_at, g.invite_code_used
+      FROM groups g
+      WHERE UPPER(g.invite_code) = ${inviteCode}
     `
 
-    if (found.length === 0) {
-      return c.json({ error: '招待コードが見つかりません' }, 404)
+    if (!group) {
+      return c.json({ error: '招待コードが見つからないか、既に使用されています。' }, 404)
     }
 
-    const group = found[0]
-    const membership = await sql`
-      SELECT 1 FROM group_members
+    // 有効期限チェック
+    if (group.invite_code_expires_at && new Date() > group.invite_code_expires_at) {
+      return c.json({ error: '招待コードの有効期限が切れています。' }, 400)
+    }
+
+    // 既に使用されているかチェック
+    if (group.invite_code_used) {
+      return c.json({ error: 'この招待コードは既に使用されています。' }, 400)
+    }
+
+    // ユーザーが既に参加しているかチェック
+    const [existingMember] = await sql`
+      SELECT id FROM group_members
       WHERE group_id = ${group.id} AND user_id = ${userId}
     `
 
-    if (membership.length > 0) {
-      return c.json(
-        { error: `「${group.name}」にはすでに参加しています` },
-        409
-      )
+    if (existingMember) {
+      return c.json({ error: 'すでにこのグループに参加しています。' }, 400)
     }
 
-    const joined = await sql`
+    // メンバー追加
+    await sql`
       INSERT INTO group_members (group_id, user_id, role)
       VALUES (${group.id}, ${userId}, 'member')
       ON CONFLICT (group_id, user_id) DO NOTHING
-      RETURNING group_id
     `
 
-    if (joined.length === 0) {
-      return c.json(
-        { error: `「${group.name}」にはすでに参加しています` },
-        409
-      )
+    // 招待コードを使用済みにマーク
+    await sql`
+      UPDATE groups
+      SET invite_code_used = TRUE
+      WHERE id = ${group.id}
+    `
+
+    return c.json({ group: { id: group.id, name: group.name } })
+  },
+
+  // 管理者による招待コード再発行
+  async rotateInviteCode(c: Context<Env>) {
+    const userId = getUserId(c)
+    const groupId = Number(c.req.param('groupId'))
+
+    // グループアクセス権限チェック（管理者かオーナー）
+    const [group] = await sql`
+      SELECT g.created_by, gm.role
+      FROM groups g
+      JOIN group_members gm ON gm.group_id = g.id
+      WHERE g.id = ${groupId} AND gm.user_id = ${userId}
+    `
+
+    if (!group) {
+      return c.json({ error: 'グループが見つかりません' }, 404)
     }
 
-    return c.json({ message: 'グループに参加しました', group })
+    if (group.role !== 'admin' && group.created_by !== userId) {
+      return c.json({ error: 'この操作を行う権限がありません' }, 403)
+    }
+
+    // 新しい招待コードを生成
+    const newInviteCode = makeInviteCode()
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7日間有効
+
+    // 古いコードを無効化し、新しいコードを設定
+    await sql`
+      UPDATE groups
+      SET invite_code = ${newInviteCode},
+          invite_code_expires_at = ${expiresAt},
+          invite_code_used = FALSE
+      WHERE id = ${groupId}
+    `
+
+    const [updated] = await sql`
+      SELECT id, name, invite_code, invite_code_expires_at
+      FROM groups
+      WHERE id = ${groupId}
+    `
+
+    return c.json({ group: updated })
   },
 
   // グループから脱退
@@ -196,79 +241,44 @@ export const GroupController = {
       return c.json({ error: 'グループIDが不正です' }, 400)
     }
 
-    const membership = await sql`
-      SELECT 1 FROM group_members
-      WHERE group_id = ${groupId} AND user_id = ${userId}
+    // 自分の脱退処理
+    const [group] = await sql`
+      SELECT created_by FROM groups WHERE id = ${groupId}
     `
 
-    if (membership.length === 0) {
-      return c.json({ error: 'このグループに参加していません' }, 404)
+    if (!group) {
+      return c.json({ error: 'グループが見つかりません' }, 404)
     }
 
-    await sql.transaction([
-      sql`SELECT id FROM groups WHERE id = ${groupId} FOR UPDATE`,
-      sql`
-        UPDATE group_members
-        SET role = 'admin'
-        WHERE group_id = ${groupId}
-          AND user_id = (
-            SELECT candidate.user_id
-            FROM group_members candidate
-            WHERE candidate.group_id = ${groupId}
-              AND candidate.user_id <> ${userId}
-            ORDER BY CASE WHEN candidate.role = 'admin' THEN 0 ELSE 1 END,
-              candidate.user_id
-            LIMIT 1
-          )
-          AND EXISTS (
-            SELECT 1 FROM group_members
-            WHERE group_id = ${groupId}
-              AND user_id = ${userId}
-              AND role = 'admin'
-          )
-          AND NOT EXISTS (
-            SELECT 1 FROM group_members
-            WHERE group_id = ${groupId}
-              AND user_id <> ${userId}
-              AND role = 'admin'
-          )
-      `,
-      sql`
-        UPDATE groups
-        SET created_by = (
-          SELECT candidate.user_id
-          FROM group_members candidate
-          WHERE candidate.group_id = ${groupId}
-            AND candidate.user_id <> ${userId}
-          ORDER BY CASE WHEN candidate.role = 'admin' THEN 0 ELSE 1 END,
-            candidate.user_id
-          LIMIT 1
-        )
-        WHERE id = ${groupId} AND created_by = ${userId}
-          AND EXISTS (
-            SELECT 1 FROM group_members
-            WHERE group_id = ${groupId} AND user_id <> ${userId}
-          )
-      `,
-      sql`
+    // グループの最終管理者が自分である場合はグループごと削除
+    if (group.created_by === userId) {
+      await sql`
         DELETE FROM group_members
         WHERE group_id = ${groupId} AND user_id = ${userId}
-      `,
-      sql`
+      `
+
+      await sql`
         DELETE FROM events
         WHERE group_id = ${groupId}
           AND NOT EXISTS (
             SELECT 1 FROM group_members WHERE group_id = ${groupId}
           )
-      `,
-      sql`
+      `
+
+      await sql`
         DELETE FROM groups
         WHERE id = ${groupId}
           AND NOT EXISTS (
             SELECT 1 FROM group_members WHERE group_id = ${groupId}
           )
-      `,
-    ])
+      `
+    } else {
+      // それ以外のメンバーは単に脱退
+      await sql`
+        DELETE FROM group_members
+        WHERE group_id = ${groupId} AND user_id = ${userId}
+      `
+    }
 
     const remainingGroup = await sql`
       SELECT id FROM groups WHERE id = ${groupId}
@@ -281,6 +291,67 @@ export const GroupController = {
         : 'グループから脱退しました',
       groupDeleted,
     })
+  },
+
+  // 管理者によるメンバー削除
+  async removeMember(c: Context<Env>, memberId: number) {
+    const userId = getUserId(c)
+    const groupId = Number(c.req.param('groupId'))
+
+    if (!Number.isInteger(groupId) || groupId <= 0) {
+      return c.json({ error: 'グループIDが不正です' }, 400)
+    }
+
+    if (!Number.isInteger(memberId) || memberId <= 0) {
+      return c.json({ error: 'メンバーIDが不正です' }, 400)
+    }
+
+    // 自分自身の削除はできない
+    if (memberId === userId) {
+      return c.json({ error: '自分自身の削除はできません' }, 400)
+    }
+
+    // グループアクセス権限チェック（管理者かオーナー）
+    const [group] = await sql`
+      SELECT g.created_by, gm.role
+      FROM groups g
+      JOIN group_members gm ON gm.group_id = g.id
+      WHERE g.id = ${groupId} AND gm.user_id = ${userId}
+    `
+
+    if (!group) {
+      return c.json({ error: 'グループが見つかりません' }, 404)
+    }
+
+    if (group.role !== 'admin' && group.created_by !== userId) {
+      return c.json({ error: 'この操作を行う権限がありません' }, 403)
+    }
+
+    // メンバーがグループに参加しているかチェック
+    const [member] = await sql`
+      SELECT id FROM group_members
+      WHERE group_id = ${groupId} AND user_id = ${memberId}
+    `
+
+    if (!member) {
+      return c.json({ error: '指定されたユーザーはこのグループに参加していません' }, 404)
+    }
+
+    // 最後の管理者が自分である場合は削除不可
+    const [count] = await sql`
+      SELECT COUNT(*) as cnt FROM group_members WHERE group_id = ${groupId} AND role = 'admin'
+    `
+
+    if (count.cnt === 1 && group.created_by === memberId) {
+      return c.json({ error: '最後の管理者は削除できません' }, 400)
+    }
+
+    await sql`
+      DELETE FROM group_members
+      WHERE group_id = ${groupId} AND user_id = ${memberId}
+    `
+
+    return c.json({ success: true })
   },
 
   // グループの共有イベント一覧
@@ -317,15 +388,14 @@ export const GroupController = {
   async createEvent(c: Context<Env>, data: CreateEventInput) {
     const userId = getUserId(c)
     const groupId = Number(c.req.param('id'))
-    const body = data
 
     if (!Number.isInteger(groupId) || groupId <= 0) {
       return c.json({ error: 'グループIDが不正です' }, 400)
     }
 
-    const title = typeof body.title === 'string' ? body.title.trim() : ''
-    const startTime = body.start_time
-    const endTime = body.end_time
+    const title = typeof data.title === 'string' ? data.title.trim() : ''
+    const startTime = data.start_time
+    const endTime = data.end_time
 
     if (
       !title ||
@@ -360,15 +430,15 @@ export const GroupController = {
         ${userId},
         ${userId},
         ${title},
-        ${typeof body.description === 'string' ? body.description : null},
+        ${typeof data.description === 'string' ? data.description : null},
         ${startTime},
         ${endTime},
-        ${typeof body.subject === 'string' ? body.subject : null},
-        ${typeof body.subject_color === 'string' ? body.subject_color : null}
+        ${typeof data.subject === 'string' ? data.subject : null},
+        ${typeof data.subject_color === 'string' ? data.subject_color : null}
       )
       RETURNING *
     `
 
     return c.json({ event: created[0] }, 201)
-  }
+  },
 }
