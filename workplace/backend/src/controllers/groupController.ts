@@ -24,12 +24,14 @@ export const GroupController = {
   // グループ一覧
   async list(c: Context<Env>) {
     const userId = getUserId(c)
-    if (c.get('jwtPayload').mode === 'demo') {
+    const isDemo = c.get('jwtPayload').mode === 'demo'
+
+    if (isDemo) {
       const groups = await sql`
         SELECT g.id, g.name, gm.role
         FROM groups g
         JOIN group_members gm ON gm.group_id = g.id
-        WHERE gm.user_id = ${userId}
+        WHERE gm.user_id = ${userId} AND g.is_demo = true
         ORDER BY g.id DESC
       `
       return c.json({ groups })
@@ -118,9 +120,14 @@ export const GroupController = {
       return c.json({ error: 'グループIDが不正です' }, 400)
     }
 
+    const isDemo = c.get('jwtPayload').mode === 'demo'
+    const accessCondition = isDemo
+      ? sql`AND EXISTS (SELECT 1 FROM groups WHERE id = ${groupId} AND is_demo = true)`
+      : sql``
     const access = await sql`
       SELECT role FROM group_members
       WHERE group_id = ${groupId} AND user_id = ${userId}
+        ${accessCondition}
     `
 
     if (access.length === 0) {
@@ -128,7 +135,7 @@ export const GroupController = {
     }
 
     const result = await sql`
-      SELECT id, name, invite_code, created_by
+      SELECT id, name, invite_code, created_by, is_demo
       FROM groups
       WHERE id = ${groupId}
     `
@@ -145,7 +152,6 @@ export const GroupController = {
       ORDER BY gm.role, u.name
     `
 
-    const isDemo = c.get('jwtPayload').mode === 'demo'
     const group: Record<string, unknown> = { ...result[0], role: access[0]?.role }
     if (isDemo) {
       delete group.invite_code

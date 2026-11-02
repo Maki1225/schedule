@@ -256,16 +256,21 @@ export const AuthController = {
         DELETE FROM events
         WHERE group_id IN (
           SELECT g.id FROM groups g
-          WHERE NOT EXISTS (
-            SELECT 1 FROM group_members gm WHERE gm.group_id = g.id
-          )
+          INNER JOIN group_members gm ON gm.group_id = g.id
+          WHERE gm.user_id = ${userId}
+            AND NOT EXISTS (
+              SELECT 1 FROM group_members gm2 WHERE gm2.group_id = g.id
+            )
         )
       `,
       sql`
         DELETE FROM groups g
-        WHERE NOT EXISTS (
-          SELECT 1 FROM group_members gm WHERE gm.group_id = g.id
+        WHERE EXISTS (
+          SELECT 1 FROM group_members gm WHERE gm.group_id = g.id AND gm.user_id = ${userId}
         )
+          AND NOT EXISTS (
+            SELECT 1 FROM group_members gm2 WHERE gm2.group_id = g.id
+          )
       `,
       sql`DELETE FROM users WHERE id = ${userId}`,
     ])
