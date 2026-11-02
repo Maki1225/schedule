@@ -13,6 +13,12 @@ function makeInviteCode() {
 }
 
 export const GroupController = {
+  // デモモードかチェック
+  isDemoUser(c: Context<Env>) {
+    const jwtPayload = c.get('jwtPayload')
+    return jwtPayload?.mode === 'demo'
+  },
+
   // グループ一覧
   async list(c: Context<Env>) {
     const userId = getUserId(c)
@@ -106,8 +112,13 @@ export const GroupController = {
       ORDER BY gm.role, u.name
     `
 
+    const group = { ...result[0], role: access[0].role }
+    if (this.isDemoUser(c)) {
+      delete group.invite_code
+    }
+
     return c.json({
-      group: { ...result[0], role: access[0].role },
+      group,
       members
     })
   },

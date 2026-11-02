@@ -1,5 +1,12 @@
 # API仕様
 
+## リクエスト検証
+
+- `POST` / `PUT` / `PATCH` / `DELETE` は、許可された `Origin` ヘッダーが必要です。許可されていないOriginまたはOriginなしのリクエストは `403` を返します。
+- JSON本文を受け取るAPIは `Content-Type: application/json` が必要です。それ以外は `415` を返します。
+- 本番環境で許可されるOriginは `https://schedule-sai.vercel.app` のみです。localhostのOriginは開発環境でのみ許可されます。
+- `POST /api/auth/logout` はログイン中ユーザーのトークン世代を更新し、発行済みJWTをすべて失効させます。ログアウト後は再ログインが必要です。
+
 ## 認証API
 
 - `POST /api/auth/google`: Googleログイン

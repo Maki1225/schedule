@@ -12,6 +12,27 @@ export interface User {
 }
 
 export const UserModel = {
+  async getTokenVersion(id: string | number): Promise<number | null> {
+    const result = await sql`
+      SELECT token_version
+      FROM users
+      WHERE id = ${id}
+    `
+    if (result.length === 0) return null
+    return result[0].token_version as number
+  },
+
+  async incrementTokenVersion(id: string | number): Promise<number | null> {
+    const result = await sql`
+      UPDATE users
+      SET token_version = token_version + 1
+      WHERE id = ${id}
+      RETURNING token_version
+    `
+    if (result.length === 0) return null
+    return result[0].token_version as number
+  },
+
   async findById(id: string | number): Promise<User | null> {
     const result = await sql`
       SELECT id, google_id, name, email, picture

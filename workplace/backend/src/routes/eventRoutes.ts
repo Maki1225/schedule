@@ -3,17 +3,15 @@ import { Env } from '../types/hono'
 import { authCheck, rejectDemoAccess } from '../middleware/authMiddleware'
 import { EventController } from '../controllers/eventController'
 import { createEventSchema, updateEventSchema } from '../validators/eventValidators'
+import { requireJsonContentType } from '../middleware/requestSecurity'
 
 const eventRoutes = new Hono<Env>()
 
-// すべてのルートに認証チェックを適用
-eventRoutes.use('*', authCheck)
-
 // GET  /api/events/
-eventRoutes.get('/', EventController.getByGroup)
+eventRoutes.get('/', authCheck, EventController.getByGroup)
 
 // POST /api/events/
-eventRoutes.post('/', rejectDemoAccess, async (c) => {
+eventRoutes.post('/', requireJsonContentType, authCheck, rejectDemoAccess, async (c) => {
   const body = await c.req.json().catch(() => ({}))
   const result = createEventSchema.safeParse(body)
 
@@ -26,7 +24,7 @@ eventRoutes.post('/', rejectDemoAccess, async (c) => {
 })
 
 // PUT /api/events/:id  <-- 追加
-eventRoutes.put('/:id', rejectDemoAccess, async (c) => {
+eventRoutes.put('/:id', requireJsonContentType, authCheck, rejectDemoAccess, async (c) => {
   const body = await c.req.json().catch(() => ({}))
   const result = updateEventSchema.safeParse(body)
 
@@ -39,6 +37,6 @@ eventRoutes.put('/:id', rejectDemoAccess, async (c) => {
 })
 
 // DELETE /api/events/:id
-eventRoutes.delete('/:id', rejectDemoAccess, EventController.delete)
+eventRoutes.delete('/:id', authCheck, rejectDemoAccess, EventController.delete)
 
 export default eventRoutes

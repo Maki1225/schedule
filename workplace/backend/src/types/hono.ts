@@ -13,6 +13,7 @@ export interface JWTPayload {
   id: string | number
   email: string
   exp: number
+  tokenVersion?: number
   mode?: 'demo'
   persona?: string
 }

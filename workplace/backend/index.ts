@@ -4,6 +4,8 @@ import { serve } from '@hono/node-server'
 import { secureHeaders } from 'hono/secure-headers'
 import { cors } from 'hono/cors'
 import { Env } from './src/types/hono'
+import { createOriginGuard, getAllowedOrigins } from './src/middleware/requestSecurity'
+import { apiWriteRateLimit } from './src/middleware/rateLimit'
 import { getJwtSecret } from './src/controllers/authController';
 import eventRoutes from './src/routes/eventRoutes'
 import authRoutes from './src/routes/authRoutes'
@@ -25,14 +27,11 @@ app.use(
 )
 
 // 2. CORS設定
-const allowedOrigins = [
-  'https://schedule-sai.vercel.app',
-  'http://127.0.0.1:8765',
-  'http://localhost:8765',
-]
+const allowedOrigins = getAllowedOrigins()
 
 app.use(
   '/api/*',
+  createOriginGuard(allowedOrigins),
   cors({
     origin: (origin) => {
       if (origin && allowedOrigins.includes(origin)) {
@@ -43,7 +42,8 @@ app.use(
     credentials: true,
     allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization'],
-  })
+  }),
+  apiWriteRateLimit
 )
 // 3. エラーハンドラ
 app.onError((err, c) => {

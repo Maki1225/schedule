@@ -250,7 +250,8 @@ export const DemoController = {
     `
 
     c.header('Cache-Control', 'no-store')
-    return c.json({ group, members, events })
+    const { invite_code: _, ...groupWithoutInviteCode } = group
+    return c.json({ group: groupWithoutInviteCode, members, events })
   },
 
   endSession(c: AppContext) {

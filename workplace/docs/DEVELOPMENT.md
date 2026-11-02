@@ -47,6 +47,9 @@ GOOGLE_CLIENT_ID="your_google_client_id"
 タスクの作成者・最終編集者と編集時刻を記録するため、Neon PostgreSQLで
 `backend/migrations/20261101_add_event_audit_metadata.sql` も一度実行してください。
 
+ログアウト時に発行済みJWTを失効させるため、Neon PostgreSQLで
+`backend/migrations/20261102_add_user_token_version.sql` を一度実行してください。
+
 ## 5. デモの使い方
 
 デモの開始方法、セッションデータの扱い、ローカルでの表示方法は

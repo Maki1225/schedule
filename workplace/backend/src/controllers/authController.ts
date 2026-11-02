@@ -77,11 +77,17 @@ export const AuthController = {
         expiryDate: tokens.expiry_date || null,
       })
 
+      const tokenVersion = await UserModel.getTokenVersion(user.id)
+      if (tokenVersion === null) {
+        throw new Error('ユーザーのトークン世代を取得できませんでした')
+      }
+
       // 5. アプリ内認証用 JWT の発行と Cookie セット
       const token = await sign(
         {
           id: user.id,
           email: user.email,
+          token_version: tokenVersion,
           exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24, // 24時間
         },
         getJwtSecret()
@@ -238,6 +244,16 @@ export const AuthController = {
   },
 
   async logout(c: AppContext) {
+    const payload = c.get('jwtPayload')
+    if (payload.tokenVersion === undefined) {
+      return c.json({ error: '無効なトークンです' }, 401)
+    }
+
+    const updatedVersion = await UserModel.incrementTokenVersion(payload.id)
+    if (updatedVersion === null) {
+      return c.json({ error: 'ユーザーが見つかりません' }, 401)
+    }
+
     deleteCookie(c, 'token', {
       path: '/',
       secure: true,
