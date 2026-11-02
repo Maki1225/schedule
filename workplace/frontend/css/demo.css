@@ -1082,3 +1082,249 @@ select:focus-visible {
     transition-duration: .01ms !important;
   }
 }
+/* =========================================
+   相関図の新しいレイアウト
+   ========================================= */
+
+/* 相関図全体 */
+.relation-map {
+  position: relative;
+
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+
+  min-height: auto;
+  height: auto;
+
+  padding: 16px;
+
+  overflow: visible;
+
+  border: 0;
+  border-radius: 16px;
+
+  background: transparent;
+}
+
+/* =========================================
+   グループの枠
+   ========================================= */
+
+.relation-group {
+  position: relative !important;
+
+  display: block;
+
+  min-width: 0;
+  min-height: 390px;
+
+  padding: 20px;
+
+  border: 2px solid #dcdaf4;
+  border-radius: 18px;
+
+  background: #f9f8ff;
+
+  overflow: hidden;
+}
+
+/* グループ名 */
+.map-group-title {
+  position: relative;
+  z-index: 3;
+
+  margin: 0 0 24px;
+
+  color: #554de0;
+
+  font-size: 19px;
+  font-weight: 800;
+
+  text-align: center;
+}
+
+/* =========================================
+   人物カードの配置
+   ========================================= */
+
+.relation-members {
+  position: relative;
+  z-index: 2;
+
+  display: grid;
+
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+
+  gap: 70px 14px;
+
+  align-items: stretch;
+}
+
+/* 人物カード */
+.relation-group .map-person {
+  position: relative !important;
+
+  top: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  left: auto !important;
+
+  transform: none;
+
+  display: flex;
+
+  width: 100%;
+  min-width: 0;
+  min-height: 125px;
+
+  padding: 12px;
+
+  border: 1px solid #e3e3ed;
+  border-radius: 12px;
+
+  background: #fff;
+
+  text-align: left;
+}
+
+/* ログイン中の人物 */
+.relation-group .map-person.is-current-profile {
+  width: 100%;
+  min-height: 125px;
+
+  border: 2px solid #6c63ff;
+
+  background: #f3f1ff;
+
+  box-shadow: 0 5px 15px rgba(84, 76, 195, .15);
+}
+
+/* 人物カードのホバー */
+.relation-group .map-person:hover,
+.relation-group .map-person:focus-visible {
+  transform: translateY(-2px);
+
+  border-color: #9c96e8;
+
+  background: #fff;
+
+  box-shadow: 0 8px 20px rgba(48, 47, 91, .13);
+}
+
+/* =========================================
+   関係線
+   ========================================= */
+
+.relation-group .relation-lines {
+  position: absolute;
+
+  inset: 0;
+
+  z-index: 1;
+
+  width: 100%;
+  height: 100%;
+
+  overflow: visible;
+
+  pointer-events: none;
+}
+
+.relation-group .relation-lines .relation-current {
+  stroke: #9b91d8;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+}
+
+/* =========================================
+   ダークモード
+   ========================================= */
+
+:root[data-theme="dark"] .relation-group {
+  border-color: var(--border-color);
+
+  background: var(--surface-muted);
+}
+
+:root[data-theme="dark"] .map-group-title {
+  color: var(--accent);
+}
+
+:root[data-theme="dark"] .relation-group .map-person {
+  border-color: var(--border-color);
+
+  background: var(--surface-raised);
+
+  color: var(--text-primary);
+}
+
+:root[data-theme="dark"] .relation-group .map-person.is-current-profile {
+  border-color: var(--accent-strong);
+
+  background: var(--accent-surface);
+}
+
+:root[data-theme="dark"] .relation-group .relation-current {
+  stroke: #aaa5ff;
+}
+
+/* =========================================
+   タブレット・スマートフォン
+   ========================================= */
+
+@media (max-width: 850px) {
+
+  .relation-map {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .relation-group {
+    min-height: 380px;
+  }
+
+}
+
+@media (max-width: 600px) {
+
+  .relation-map {
+    padding: 4px;
+    gap: 18px;
+  }
+
+  .relation-group {
+    min-height: 390px;
+    padding: 14px;
+  }
+
+  .map-group-title {
+    font-size: 17px;
+    margin-bottom: 20px;
+  }
+
+  .relation-members {
+    gap: 55px 10px;
+  }
+
+  .relation-group .map-person,
+  .relation-group .map-person.is-current-profile {
+    min-height: 125px;
+    padding: 9px;
+  }
+
+  .relation-group .map-person .person-avatar {
+    width: 34px;
+    height: 34px;
+  }
+
+  .relation-group .map-name {
+    font-size: 13px;
+  }
+
+  .relation-group .map-birthday,
+  .relation-group .map-role {
+    font-size: 10px;
+  }
+
+}
