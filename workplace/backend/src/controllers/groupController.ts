@@ -48,47 +48,65 @@ export const GroupController = {
 
   // グループ作成
   async create(c: Context<Env>) {
-    const userId = getUserId(c)
-    const body = await c.req.json().catch(() => null)
+    try {
+      const userId = getUserId(c)
+      const body = await c.req.json().catch(() => null)
 
-    // body が null だった場合や型エラーを防ぐための安全な型チェック
-    if (!body || typeof body !== 'object') {
+      // body が null だった場合や型エラーを防ぐための安全な型チェック
+      if (!body || typeof body !== 'object' || Array.isArray(body)) {
+        return c.json(
+          { error: 'リクエストボディに name フィールドが必要です' },
+          400
+        )
+      }
+
+      const result = createGroupSchema.safeParse(body)
+      if (!result.success) {
+        return c.json(
+          { error: result.error.issues[0].message },
+          400
+        )
+      }
+
+      const name = result.data.name.trim()
+
+      if (!name) {
+        return c.json({ error: 'グループ名は必須です' }, 400)
+      }
+
+      const inviteCode = makeInviteCode()
+
+      // 有効期限は作成日から7日間（必要に応じて調整）
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+
+      const created = await sql`
+        INSERT INTO groups (name, invite_code, invite_code_expires_at, created_by)
+        VALUES (${name}, ${inviteCode}, ${expiresAt}, ${userId})
+        RETURNING id, name, invite_code, invite_code_expires_at
+      `
+
+      const group = created[0]
+
+      await sql`
+        INSERT INTO group_members (group_id, user_id, role)
+        VALUES (${group.id}, ${userId}, 'admin')
+        ON CONFLICT (group_id, user_id) DO NOTHING
+      `
+
+      return c.json({ group }, 201)
+    } catch (err) {
+      console.error('[GroupController.create Error]:', err)
+      // 本番環境では詳細を返さない
+      const isProduction =
+        process.env.NODE_ENV === 'production' || process.env.VERCEL === '1'
+      if (isProduction) {
+        return c.json({ error: 'Internal Server Error' }, 500)
+      }
       return c.json(
-        { error: 'リクエストボディに name フィールドが必要です' },
-        400
+        { error: 'グループの作成に失敗しました', message: err instanceof Error ? err.message : String(err) },
+        500
       )
     }
-
-    const result = createGroupSchema.safeParse(body)
-    if (!result.success) {
-      return c.json(
-        { error: result.error.issues[0].message },
-        400
-      )
-    }
-
-    const name = result.data.name.trim()
-
-    const inviteCode = makeInviteCode()
-
-    // 有効期限は作成日から7日間（必要に応じて調整）
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-
-    const created = await sql`
-      INSERT INTO groups (name, invite_code, invite_code_expires_at, created_by)
-      VALUES (${name}, ${inviteCode}, ${expiresAt}, ${userId})
-      RETURNING id, name, invite_code, invite_code_expires_at
-    `
-
-    const group = created[0]
-
-    await sql`
-      INSERT INTO group_members (group_id, user_id, role)
-      VALUES (${group.id}, ${userId}, 'admin')
-      ON CONFLICT (group_id, user_id) DO NOTHING
-    `
-
-    return c.json({ group }, 201)
   },
 
   // グループ詳細とメンバー一覧
@@ -127,7 +145,11 @@ export const GroupController = {
       ORDER BY gm.role, u.name
     `
 
+    const isDemo = c.get('jwtPayload').mode === 'demo'
     const group: Record<string, unknown> = { ...result[0], role: access[0]?.role }
+    if (isDemo) {
+      delete group.invite_code
+    }
 
     return c.json({ group, members })
   },
@@ -136,6 +158,11 @@ export const GroupController = {
   async join(c: Context<Env>) {
     const userId = getUserId(c)
     const inviteCode = (c.req.param('inviteCode') || '').trim().toUpperCase()
+
+    // デモユーザーは参加不可（防御策）
+    if (c.get('jwtPayload').mode === 'demo') {
+      return c.json({ error: 'デモモードではグループに参加できません。' }, 403)
+    }
 
     if (!inviteCode || inviteCode.length > 32) {
       return c.json({ error: '招待コードが不正です。' }, 400)
@@ -354,14 +381,22 @@ export const GroupController = {
     return c.json({ success: true })
   },
 
-  // グループの共有イベント一覧
+  // グループの共有イベント一覧 (GET /api/groups/:id/events?page=1&limit=20)
   async listEvents(c: Context<Env>) {
     const userId = getUserId(c)
     const groupId = Number(c.req.param('id'))
+    const page = Number(c.req.query('page') || '1')
+    const limit = Number(c.req.query('limit') || '20')
 
     if (!Number.isInteger(groupId) || groupId <= 0) {
       return c.json({ error: 'グループIDが不正です' }, 400)
     }
+
+    if (page < 1 || limit < 1) {
+      return c.json({ error: 'page と limit は1以上の値で指定してください' }, 400)
+    }
+
+    const offset = (page - 1) * limit
 
     const access = await sql`
       SELECT 1 FROM group_members
@@ -372,6 +407,10 @@ export const GroupController = {
       return c.json({ error: 'このグループに参加していません' }, 403)
     }
 
+    const count = await sql`
+      SELECT COUNT(*) as cnt FROM events WHERE group_id = ${groupId}
+    `.then((r) => r[0].cnt)
+
     const events = await sql`
       SELECT e.*, creator.name AS creator_name, editor.name AS editor_name
       FROM events e
@@ -379,9 +418,10 @@ export const GroupController = {
       LEFT JOIN users editor ON e.updated_by = editor.id
       WHERE e.group_id = ${groupId}
       ORDER BY e.start_time ASC
+      LIMIT ${limit} OFFSET ${offset}
     `
 
-    return c.json({ events })
+    return c.json({ events, pagination: { page, limit, total: count } })
   },
 
   // グループの共有イベント作成
@@ -393,24 +433,7 @@ export const GroupController = {
       return c.json({ error: 'グループIDが不正です' }, 400)
     }
 
-    const title = typeof data.title === 'string' ? data.title.trim() : ''
-    const startTime = data.start_time
-    const endTime = data.end_time
-
-    if (
-      !title ||
-      typeof startTime !== 'string' ||
-      typeof endTime !== 'string' ||
-      !Number.isFinite(Date.parse(startTime)) ||
-      !Number.isFinite(Date.parse(endTime)) ||
-      Date.parse(endTime) <= Date.parse(startTime)
-    ) {
-      return c.json(
-        { error: 'タイトルと正しい開始・終了時刻を入力してください' },
-        400
-      )
-    }
-
+    // グループ所属権限の確認
     const access = await sql`
       SELECT 1 FROM group_members
       WHERE group_id = ${groupId} AND user_id = ${userId}
@@ -419,6 +442,14 @@ export const GroupController = {
     if (access.length === 0) {
       return c.json({ error: 'このグループに参加していません' }, 403)
     }
+
+    // タイトルを取得（大文字小文字の区別はせず、必要に応じてトリミング）
+    const title = data.title || ''
+    const description = data.description || null
+    const startTime = data.start_time
+    const endTime = data.end_time
+    const subject = data.subject || null
+    const subjectColor = data.subject_color || null
 
     const created = await sql`
       INSERT INTO events (
@@ -430,11 +461,11 @@ export const GroupController = {
         ${userId},
         ${userId},
         ${title},
-        ${typeof data.description === 'string' ? data.description : null},
+        ${description},
         ${startTime},
         ${endTime},
-        ${typeof data.subject === 'string' ? data.subject : null},
-        ${typeof data.subject_color === 'string' ? data.subject_color : null}
+        ${subject},
+        ${subjectColor}
       )
       RETURNING *
     `

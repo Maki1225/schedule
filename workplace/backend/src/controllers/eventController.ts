@@ -62,15 +62,23 @@ export const EventController = {
     }
   },
 
-  // 2. 自分が所属する特定グループの予定一覧取得 (GET /api/events?groupId=xx)
+  // 2. 自分が所属する特定グループの予定一覧取得 (GET /api/events?groupId=xx&page=1&limit=20)
   async getByGroup(c: AppContext) {
     try {
       const user = c.get('jwtPayload')
       const groupId = c.req.query('groupId')
+      const page = Number(c.req.query('page') || '1')
+      const limit = Number(c.req.query('limit') || '20')
 
       if (!groupId) {
         return c.json({ error: 'groupId が指定されていません' }, 400)
       }
+
+      if (page < 1 || limit < 1) {
+        return c.json({ error: 'page と limit は1以上の値で指定してください' }, 400)
+      }
+
+      const offset = (page - 1) * limit
 
       const [membership] = await sql`
         SELECT role FROM group_members WHERE user_id = ${user.id} AND group_id = ${groupId}
@@ -78,6 +86,10 @@ export const EventController = {
       if (!membership) {
         return c.json({ error: 'このグループの予定を閲覧する権限がありません' }, 403)
       }
+
+      const count = await sql`
+        SELECT COUNT(*) as cnt FROM events WHERE group_id = ${groupId}
+      `.then((r) => r[0].cnt)
 
       const events = await sql`
         SELECT
@@ -89,9 +101,10 @@ export const EventController = {
         LEFT JOIN users editor ON e.updated_by = editor.id
         WHERE e.group_id = ${groupId}
         ORDER BY e.start_time ASC
+        LIMIT ${limit} OFFSET ${offset}
       `
 
-      return c.json({ events }, 200)
+      return c.json({ events, pagination: { page, limit, total: count } }, 200)
     } catch (err) {
       console.error('[EventController.getByGroup Error]:', err)
       return c.json({ error: '予定の取得に失敗しました' }, 500)

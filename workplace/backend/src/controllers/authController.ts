@@ -45,11 +45,16 @@ export const getJwtSecret = (): string => {
   if (isProduction && secret.length < 32) {
     throw new Error(
       `FATAL: JWT_SECRET must be at least 32 characters long (current: ${secret.length}). ` +
-        `Generate a secure secret with: openssl rand -hex 32`
+      `Generate a secure secret with: openssl rand -hex 32`
     )
   }
 
   return secret
+}
+
+// Google トークンの無効化・削除
+async function revokeGoogleTokens(userId: number): Promise<void> {
+  await sql`DELETE FROM users WHERE id = ${userId}`
 }
 
 export const AuthController = {
@@ -140,7 +145,6 @@ export const AuthController = {
     } catch (err) {
       console.error('Google 認証エラー:', err)
 
-      // エラーメッセージから詳細を隠す
       const isProduction =
         process.env.NODE_ENV === 'production' || process.env.VERCEL === '1'
 
@@ -280,10 +284,14 @@ export const AuthController = {
       return c.json({ error: '無効なトークンです' }, 401)
     }
 
-    const updatedVersion = await UserModel.incrementTokenVersion(payload.id)
+    // トークン世代を increment して古い JWT を無効化
+    const updatedVersion = await UserModel.incrementTokenVersion(payload.id as number)
     if (updatedVersion === null) {
       return c.json({ error: 'ユーザーが見つかりません' }, 401)
     }
+
+    // Google トークンの無効化・削除
+    await revokeGoogleTokens(payload.id as number)
 
     deleteCookie(c, 'token', {
       path: '/',
@@ -291,5 +299,27 @@ export const AuthController = {
       sameSite: 'None',
     })
     return c.json({ message: 'ログアウトしました' })
+  },
+
+  // Google連携の解除（トークンの完全削除とリフレッシュ）
+  async disconnectGoogle(c: AppContext) {
+    const userId = c.get('jwtPayload').id
+
+    // Google トークンの完全削除
+    await revokeGoogleTokens(userId as number)
+
+    // Cookie 削除
+    deleteCookie(c, 'token', {
+      path: '/',
+      secure: true,
+      sameSite: 'None',
+    })
+
+    // トークン世代を increment して既存の JWT を無効化
+    await UserModel.incrementTokenVersion(userId as number)
+
+    return c.json({
+      message: 'Google連携を解除しました。トークンを破棄し、再ログインが必要です。',
+    })
   },
 }

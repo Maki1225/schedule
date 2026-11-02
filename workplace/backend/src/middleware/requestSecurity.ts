@@ -9,9 +9,11 @@ const developmentAllowedOrigins = [
 const stateChangingMethods = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
 
 export function getAllowedOrigins(environment = process.env.NODE_ENV): string[] {
-  return environment === 'production'
-    ? [...productionAllowedOrigins]
-    : [...developmentAllowedOrigins]
+  // 明示的に development の場合のみローカルオリジンを許可。
+  // production または未設定の場合は本番オリジンのみを返す（CORS 資格情報付き応答の不正な許可を防ぐため）。
+  return environment === 'development'
+    ? [...developmentAllowedOrigins]
+    : [...productionAllowedOrigins]
 }
 
 export function createOriginGuard(allowedOrigins: readonly string[]): MiddlewareHandler {

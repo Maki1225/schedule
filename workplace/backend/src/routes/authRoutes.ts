@@ -67,4 +67,13 @@ authRoutes.post(
   (c) => AuthController.logout(c)
 )
 
+// Google連携の解除
+authRoutes.post(
+  '/disconnect',
+  requireLoginOriginGuard,
+  authCheck,
+  rejectDemoAccess,
+  (c) => AuthController.disconnectGoogle(c)
+)
+
 export default authRoutes

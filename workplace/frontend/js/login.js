@@ -1,5 +1,5 @@
 // APIベースURL（本番環境用）
-const API_BASE_URL = "https://schedule-backend-navy.vercel.app";
+const API_BASE_URL = "https://schedule-backend-navy.vercel.app"\;
 
 let codeClient;
 const selectAccount = new URLSearchParams(window.location.search).get('select_account') === 'true';
@@ -22,7 +22,10 @@ function initGoogleAuth() {
       'openid',
       'email',
       'profile',
-      'https://www.googleapis.com/auth/calendar.events.readonly'
+      // 読み取り専用スコープのみを要求（管理権限は除外）
+      'https://www.googleapis.com/auth/calendar.events.readonly',
+      'https://www.googleapis.com/auth/classroom.courses.readonly',
+      'https://www.googleapis.com/auth/classroom.coursework.readonly',
     ].join(' '),
 
     // 👇 ポップアップモードに戻す
