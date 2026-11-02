@@ -4,7 +4,6 @@ import { AuthController } from '../controllers/authController'
 import { authCheck, rejectDemoAccess } from '../middleware/authMiddleware'
 import { requireJsonContentType } from '../middleware/requestSecurity'
 import { googleAuthRateLimit } from '../middleware/rateLimit'
-import { GoogleDataController } from '../controllers/googleDataController'
 
 export const authRoutes = new Hono<Env>()
 
@@ -41,12 +40,5 @@ authRoutes.delete('/me', authCheck, rejectDemoAccess, (c) => AuthController.dele
 
 // ログアウト
 authRoutes.post('/logout', authCheck, rejectDemoAccess, (c) => AuthController.logout(c))
-
-authRoutes.get('/google/classroom/coursework', authCheck, rejectDemoAccess, (c) =>
-  GoogleDataController.classroomCoursework(c)
-)
-authRoutes.get('/google/calendar/events', authCheck, rejectDemoAccess, (c) =>
-  GoogleDataController.calendarEvents(c)
-)
 
 export default authRoutes
