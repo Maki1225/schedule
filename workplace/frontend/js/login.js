@@ -22,14 +22,12 @@ function initGoogleAuth() {
       'openid',
       'email',
       'profile',
-      'https://www.googleapis.com/auth/classroom.course-work.readonly',
-      'https://www.googleapis.com/auth/classroom.courses.readonly',
       'https://www.googleapis.com/auth/calendar.events.readonly'
     ].join(' '),
-    
+
     // 👇 ポップアップモードに戻す
     ux_mode: 'popup',
-    
+
     // 👇 コールバック関数をその場で直接定義（スコープエラーを防ぐためインライン記述）
     callback: async (response) => {
       if (response.error) {
