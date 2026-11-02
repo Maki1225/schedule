@@ -1,119 +1,516 @@
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
+
   <title>クラスのつながり - Study Planner</title>
+
   <link rel="stylesheet" href="css/theme.css">
-  <link rel="stylesheet" href="css/demo.css?v=4">
+  <link rel="stylesheet" href="css/demo.css?v=5">
   <link rel="stylesheet" href="css/demo-mode.css">
+
   <script src="js/theme.js" defer></script>
-  <script>window.API_BASE_URL = "https://schedule-backend-navy.vercel.app";</script>
+
+  <script>
+    window.API_BASE_URL = "https://schedule-backend-navy.vercel.app";
+  </script>
+
   <script src="js/demo-mode.js"></script>
 </head>
+
 <body>
+
+  <!-- =========================
+       ヘッダー
+  ========================== -->
+
   <header class="demo-header">
-    <a class="demo-brand" href="calendar.html">Study Planner</a>
+
+    <a class="demo-brand" href="calendar.html">
+      Study Planner
+    </a>
+
     <nav class="demo-nav" aria-label="デモページ">
       <a href="calendar.html">カレンダー・課題</a>
       <a href="group.html">グループ・チャット</a>
       <a href="demo.html" aria-current="page">クラス相関図</a>
     </nav>
+
     <div class="demo-account">
-      <span id="demoUserName">デモ情報を読み込み中...</span>
+
+      <span id="demoUserName">
+        デモ情報を読み込み中...
+      </span>
+
       <div id="demoModeBadge" class="demo-mode-badge" hidden>
         <span>デモモード</span>
-        <button type="button" id="demoModeExitButton">デモを終了</button>
+        <button type="button" id="demoModeExitButton">
+          デモを終了
+        </button>
       </div>
+
     </div>
+
   </header>
 
+
+  <!-- =========================
+       メインコンテンツ
+  ========================== -->
+
   <main class="demo-main">
+
+    <!-- デモモードの説明 -->
+
     <section class="demo-notice" aria-label="デモの注意事項">
       <strong>デモモード</strong>
-      <span>課題、グループ、チャットの変更はこのタブのデモセッション内だけで保持されます。</span>
+      <span>
+        課題、グループ、チャットの変更はこのタブのデモセッション内だけで保持されます。
+      </span>
     </section>
-    <p id="demoStatus" class="demo-status" role="status" aria-live="polite"></p>
+
+    <p
+      id="demoStatus"
+      class="demo-status"
+      role="status"
+      aria-live="polite">
+    </p>
+
+
+    <!-- =========================
+         クラス相関図
+    ========================== -->
 
     <section class="demo-section" aria-labelledby="relationshipTitle">
+
       <div class="section-heading">
+
         <div>
           <p class="eyebrow">CLASS INSIGHTS</p>
-          <h1 id="relationshipTitle">クラスのつながり</h1>
-          <p>人物を選ぶとプロフィールを確認できます。線のラベルはメンバーとグループの関係を示します。</p>
+
+          <h1 id="relationshipTitle">
+            クラスのつながり
+          </h1>
+
+          <p>
+            人物を選ぶとプロフィールを確認できます。
+            線はログイン中のメンバーと他のメンバーの関係を示します。
+          </p>
         </div>
-        <span class="group-pill">高専・同じクラス</span>
+
+        <span class="group-pill">
+          高専・同じクラス
+        </span>
+
       </div>
-      <div class="relation-map" aria-label="実験班とグループワークでの関係を示した4人の相関図">
-        <svg class="relation-lines" role="img" aria-label="ログイン中の人と他のメンバーは同級生です。実験班に所属し、グループワークで協力しています。"></svg>
-        <button class="map-person map-yuito" type="button" data-profile-id="yuito" aria-label="ゆいとのプロフィールを表示">
-          <span class="person-avatar avatar-violet" aria-hidden="true"></span>
-          <span class="map-person-info">
-            <span class="map-name">ゆいと</span>
-            <span class="map-current-label">ログイン中</span>
-            <span class="map-birthday"></span>
-            <span class="map-role"></span>
-            <span class="map-task-count"></span>
-          </span>
-        </button>
-        <button class="map-person map-aoi" type="button" data-profile-id="aoi" aria-label="あおいのプロフィールを表示">
-          <span class="person-avatar avatar-blue" aria-hidden="true"></span>
-          <span class="map-person-info">
-            <span class="map-name">あおい</span>
-            <span class="map-current-label">ログイン中</span>
-            <span class="map-birthday"></span>
-            <span class="map-role"></span>
-            <span class="map-task-count"></span>
-          </span>
-        </button>
-        <button class="map-person map-haruhi" type="button" data-profile-id="haruhi" aria-label="はるひのプロフィールを表示">
-          <span class="person-avatar avatar-green" aria-hidden="true"></span>
-          <span class="map-person-info">
-            <span class="map-name">はるひ</span>
-            <span class="map-current-label">ログイン中</span>
-            <span class="map-birthday"></span>
-            <span class="map-role"></span>
-            <span class="map-task-count"></span>
-          </span>
-        </button>
-        <button class="map-person map-nami" type="button" data-profile-id="nami" aria-label="なみのプロフィールを表示">
-          <span class="person-avatar avatar-orange" aria-hidden="true"></span>
-          <span class="map-person-info">
-            <span class="map-name">なみ</span>
-            <span class="map-current-label">ログイン中</span>
-            <span class="map-birthday"></span>
-            <span class="map-role"></span>
-            <span class="map-task-count"></span>
-          </span>
-        </button>
-        <div class="map-group map-group-lab"><span>🧪</span> 実験班</div>
-        <div class="map-group map-group-work"><span>📝</span> グループワーク</div>
+
+
+      <!-- =========================
+           相関図全体
+      ========================== -->
+
+      <div
+        class="relation-map"
+        aria-label="実験班とグループワークの相関図">
+
+
+        <!-- =========================
+             実験班
+        ========================== -->
+
+        <section
+          class="relation-group"
+          aria-labelledby="labTitle">
+
+          <h3 id="labTitle" class="map-group-title">
+            🧪 実験班
+          </h3>
+
+          <svg
+            class="relation-lines"
+            aria-hidden="true">
+          </svg>
+
+          <div class="relation-members">
+
+            <!-- ゆいと -->
+
+            <button
+              class="map-person map-yuito"
+              type="button"
+              data-profile-id="yuito"
+              aria-label="ゆいとのプロフィールを表示">
+
+              <span
+                class="person-avatar avatar-violet"
+                aria-hidden="true">
+              </span>
+
+              <span class="map-person-info">
+
+                <span class="map-name">
+                  ゆいと
+                </span>
+
+                <span class="map-current-label">
+                  ログイン中
+                </span>
+
+                <span class="map-birthday"></span>
+                <span class="map-role"></span>
+                <span class="map-task-count"></span>
+
+              </span>
+
+            </button>
+
+
+            <!-- あおい -->
+
+            <button
+              class="map-person map-aoi"
+              type="button"
+              data-profile-id="aoi"
+              aria-label="あおいのプロフィールを表示">
+
+              <span
+                class="person-avatar avatar-blue"
+                aria-hidden="true">
+              </span>
+
+              <span class="map-person-info">
+
+                <span class="map-name">
+                  あおい
+                </span>
+
+                <span class="map-current-label">
+                  ログイン中
+                </span>
+
+                <span class="map-birthday"></span>
+                <span class="map-role"></span>
+                <span class="map-task-count"></span>
+
+              </span>
+
+            </button>
+
+
+            <!-- はるひ -->
+
+            <button
+              class="map-person map-haruhi"
+              type="button"
+              data-profile-id="haruhi"
+              aria-label="はるひのプロフィールを表示">
+
+              <span
+                class="person-avatar avatar-green"
+                aria-hidden="true">
+              </span>
+
+              <span class="map-person-info">
+
+                <span class="map-name">
+                  はるひ
+                </span>
+
+                <span class="map-current-label">
+                  ログイン中
+                </span>
+
+                <span class="map-birthday"></span>
+                <span class="map-role"></span>
+                <span class="map-task-count"></span>
+
+              </span>
+
+            </button>
+
+
+            <!-- なみ -->
+
+            <button
+              class="map-person map-nami"
+              type="button"
+              data-profile-id="nami"
+              aria-label="なみのプロフィールを表示">
+
+              <span
+                class="person-avatar avatar-orange"
+                aria-hidden="true">
+              </span>
+
+              <span class="map-person-info">
+
+                <span class="map-name">
+                  なみ
+                </span>
+
+                <span class="map-current-label">
+                  ログイン中
+                </span>
+
+                <span class="map-birthday"></span>
+                <span class="map-role"></span>
+                <span class="map-task-count"></span>
+
+              </span>
+
+            </button>
+
+          </div>
+
+        </section>
+
+
+        <!-- =========================
+             グループワーク
+        ========================== -->
+
+        <section
+          class="relation-group"
+          aria-labelledby="workTitle">
+
+          <h3 id="workTitle" class="map-group-title">
+            📝 グループワーク
+          </h3>
+
+          <svg
+            class="relation-lines"
+            aria-hidden="true">
+          </svg>
+
+          <div class="relation-members">
+
+            <!-- ゆいと -->
+
+            <button
+              class="map-person map-yuito"
+              type="button"
+              data-profile-id="yuito"
+              aria-label="ゆいとのプロフィールを表示">
+
+              <span
+                class="person-avatar avatar-violet"
+                aria-hidden="true">
+              </span>
+
+              <span class="map-person-info">
+
+                <span class="map-name">
+                  ゆいと
+                </span>
+
+                <span class="map-current-label">
+                  ログイン中
+                </span>
+
+                <span class="map-birthday"></span>
+                <span class="map-role"></span>
+                <span class="map-task-count"></span>
+
+              </span>
+
+            </button>
+
+
+            <!-- あおい -->
+
+            <button
+              class="map-person map-aoi"
+              type="button"
+              data-profile-id="aoi"
+              aria-label="あおいのプロフィールを表示">
+
+              <span
+                class="person-avatar avatar-blue"
+                aria-hidden="true">
+              </span>
+
+              <span class="map-person-info">
+
+                <span class="map-name">
+                  あおい
+                </span>
+
+                <span class="map-current-label">
+                  ログイン中
+                </span>
+
+                <span class="map-birthday"></span>
+                <span class="map-role"></span>
+                <span class="map-task-count"></span>
+
+              </span>
+
+            </button>
+
+
+            <!-- はるひ -->
+
+            <button
+              class="map-person map-haruhi"
+              type="button"
+              data-profile-id="haruhi"
+              aria-label="はるひのプロフィールを表示">
+
+              <span
+                class="person-avatar avatar-green"
+                aria-hidden="true">
+              </span>
+
+              <span class="map-person-info">
+
+                <span class="map-name">
+                  はるひ
+                </span>
+
+                <span class="map-current-label">
+                  ログイン中
+                </span>
+
+                <span class="map-birthday"></span>
+                <span class="map-role"></span>
+                <span class="map-task-count"></span>
+
+              </span>
+
+            </button>
+
+
+            <!-- なみ -->
+
+            <button
+              class="map-person map-nami"
+              type="button"
+              data-profile-id="nami"
+              aria-label="なみのプロフィールを表示">
+
+              <span
+                class="person-avatar avatar-orange"
+                aria-hidden="true">
+              </span>
+
+              <span class="map-person-info">
+
+                <span class="map-name">
+                  なみ
+                </span>
+
+                <span class="map-current-label">
+                  ログイン中
+                </span>
+
+                <span class="map-birthday"></span>
+                <span class="map-role"></span>
+                <span class="map-task-count"></span>
+
+              </span>
+
+            </button>
+
+          </div>
+
+        </section>
+
       </div>
+
     </section>
 
-    <section id="memberSection" class="demo-section" aria-labelledby="membersTitle">
+
+    <!-- =========================
+         メンバー一覧
+    ========================== -->
+
+    <section
+      id="memberSection"
+      class="demo-section"
+      aria-labelledby="membersTitle">
+
       <div class="section-heading">
+
         <div>
           <p class="eyebrow">MEMBERS</p>
-          <h2 id="membersTitle">メンバー</h2>
+
+          <h2 id="membersTitle">
+            メンバー
+          </h2>
         </div>
-        <p>カードからプロフィール確認・ワンタップログイン</p>
+
+        <p>
+          カードからプロフィール確認・ワンタップログイン
+        </p>
+
       </div>
-      <div id="demoProfiles" class="profile-grid"></div>
+
+      <div
+        id="demoProfiles"
+        class="profile-grid">
+      </div>
+
     </section>
+
   </main>
 
-  <dialog id="profileDialog" class="profile-dialog" aria-labelledby="profileDialogName">
-    <button id="profileDialogClose" class="dialog-close" type="button" aria-label="閉じる">×</button>
-    <p class="eyebrow">MEMBER PROFILE</p>
-    <span id="profileDialogAvatar" class="person-avatar avatar-violet" aria-hidden="true"></span>
+
+  <!-- =========================
+       プロフィールダイアログ
+  ========================== -->
+
+  <dialog
+    id="profileDialog"
+    class="profile-dialog"
+    aria-labelledby="profileDialogName">
+
+    <button
+      id="profileDialogClose"
+      class="dialog-close"
+      type="button"
+      aria-label="閉じる">
+      ×
+    </button>
+
+    <p class="eyebrow">
+      MEMBER PROFILE
+    </p>
+
+    <span
+      id="profileDialogAvatar"
+      class="person-avatar avatar-violet"
+      aria-hidden="true">
+    </span>
+
     <h2 id="profileDialogName"></h2>
-    <p id="profileDialogBirthday" class="dialog-birthday"></p>
-    <p id="profileDialogRole" class="dialog-role"></p>
-    <p class="dialog-task-count">登録課題数：<strong id="profileDialogTaskCount">0</strong> 件</p>
+
+    <p
+      id="profileDialogBirthday"
+      class="dialog-birthday">
+    </p>
+
+    <p
+      id="profileDialogRole"
+      class="dialog-role">
+    </p>
+
+    <p class="dialog-task-count">
+      登録課題数：
+      <strong id="profileDialogTaskCount">0</strong>
+      件
+    </p>
+
   </dialog>
 
-  <script src="js/demo.js?v=6"></script>
+
+  <!-- =========================
+       JavaScript
+  ========================== -->
+
+  <script src="js/demo.js?v=7"></script>
+
 </body>
 </html>
