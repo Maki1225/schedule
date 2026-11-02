@@ -55,7 +55,9 @@ app.onError((err, c) => {
   const errorId = Math.random().toString(36).slice(-8)
   console.error(`${ERROR_LOG_PREFIX} [errorId=${errorId}]:`, err)
 
-  const isProduction = process.env.NODE_ENV === 'production'
+  // Vercel 環境でも NODE_ENV が設定されない場合があるため VERCEL 変数もチェック
+  const isProduction =
+    process.env.NODE_ENV === 'production' || process.env.VERCEL === '1'
 
   if (isProduction) {
     return c.json(

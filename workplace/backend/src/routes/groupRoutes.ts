@@ -3,6 +3,7 @@ import { Hono } from 'hono'
 import { Env } from '../types/hono'
 import { authCheck, rejectDemoAccess } from '../middleware/authMiddleware'
 import { GroupController } from '../controllers/groupController'
+import { createGroupSchema } from '../validators/groupValidators'
 import { createEventSchema } from '../validators/eventValidators'
 import { GroupChatController } from '../controllers/groupChatController'
 import { requireJsonContentType } from '../middleware/requestSecurity'
@@ -21,12 +22,12 @@ groupRoutes.get('/:id/events', authCheck, rejectDemoAccess, (c) => GroupControll
 groupRoutes.post('/:id/events', requireJsonContentType, authCheck, rejectDemoAccess, async (c) => {
   const body = await c.req.json().catch(() => ({}))
   const result = createEventSchema.safeParse(body)
-  
+
   if (!result.success) {
     const errors = result.error.issues.map((issue) => issue.message)
     return c.json({ errors }, 400)
   }
-  
+
   return GroupController.createEvent(c, result.data)
 })
 

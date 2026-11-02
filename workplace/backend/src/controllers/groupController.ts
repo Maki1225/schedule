@@ -4,6 +4,7 @@ import { sql } from '../config/db'
 import { Env } from '../types/hono'
 import { randomBytes } from 'node:crypto'
 import type { CreateEventInput } from '../validators/eventValidators'
+import { createGroupSchema } from '../validators/groupValidators'
 
 function getUserId(c: Context<Env>) {
   return c.get('jwtPayload').id
@@ -48,15 +49,25 @@ export const GroupController = {
   // グループ作成
   async create(c: Context<Env>) {
     const userId = getUserId(c)
-    const body = await c.req.json().catch(() => ({}))
-    const name = typeof body.name === 'string' ? body.name.trim() : ''
+    const body = await c.req.json().catch(() => null)
 
-    if (!name || name.length > 50) {
+    // body が null だった場合や型エラーを防ぐための安全な型チェック
+    if (!body || typeof body !== 'object') {
       return c.json(
-        { error: 'グループ名は1〜50文字で入力してください' },
+        { error: 'リクエストボディに name フィールドが必要です' },
         400
       )
     }
+
+    const result = createGroupSchema.safeParse(body)
+    if (!result.success) {
+      return c.json(
+        { error: result.error.issues[0].message },
+        400
+      )
+    }
+
+    const name = result.data.name.trim()
 
     const inviteCode = makeInviteCode()
 
