@@ -1,4 +1,3 @@
-
 let calendar;
 let calendarUpdateRequest = 0;
 
@@ -127,21 +126,27 @@ async function updateCalendar() {
   calendar.removeAllEvents();
 
   events.forEach(event => {
-    let color = "#4285F4";
-    const description = event.description || "";
+    // 1. バックエンドから返却された display_color（COALESCE(subject_color, group_color)）を優先適用
+    // 2. なければ従来のフォールバックロジック（優先度別カラー / デフォルト青色）を適用
+    let color = event.display_color || event.group_color || event.subject_color;
 
-    if (description.startsWith("[課題]")) {
-      if (description.includes("優先度:高")) {
-        color = "#E53935";
-      } else if (description.includes("優先度:中")) {
-        color = "#FB8C00";
-      } else if (description.includes("優先度:低")) {
-        color = "#43A047";
-      } else {
-        color = "#E53935";
-      }
-    } else if (description.startsWith("[予定]")) {
+    if (!color) {
       color = "#4285F4";
+      const description = event.description || "";
+
+      if (description.startsWith("[課題]")) {
+        if (description.includes("優先度:高")) {
+          color = "#E53935";
+        } else if (description.includes("優先度:中")) {
+          color = "#FB8C00";
+        } else if (description.includes("優先度:低")) {
+          color = "#43A047";
+        } else {
+          color = "#E53935";
+        }
+      } else if (description.startsWith("[予定]")) {
+        color = "#4285F4";
+      }
     }
 
     calendar.addEvent({
