@@ -1,6 +1,7 @@
 import { OAuth2Client } from 'google-auth-library'
 import { Context } from 'hono'
 import { UserModel } from '../models/userModel'
+import { getDecryptedTokens } from '../utils/encryptTokens'
 import { Env } from '../types/hono'
 
 async function getAccessToken(userId: string | number): Promise<string> {
@@ -9,21 +10,27 @@ async function getAccessToken(userId: string | number): Promise<string> {
     throw new Error('Googleアカウント情報が見つかりません。再ログインしてください。')
   }
 
+  const decrypted = getDecryptedTokens({
+    accessToken: savedTokens.google_access_token,
+    refreshToken: savedTokens.google_refresh_token,
+    expiryDate: savedTokens.google_token_expires_at,
+  })
+
   const client = new OAuth2Client(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET
   )
   client.setCredentials({
-    access_token: savedTokens.google_access_token || undefined,
-    refresh_token: savedTokens.google_refresh_token || undefined,
-    expiry_date: savedTokens.google_token_expires_at || undefined,
+    access_token: decrypted.accessToken || undefined,
+    refresh_token: decrypted.refreshToken || undefined,
+    expiry_date: decrypted.expiryDate || undefined,
   })
 
   if (
-    !savedTokens.google_refresh_token &&
-    (!savedTokens.google_access_token ||
-      (savedTokens.google_token_expires_at !== null &&
-        savedTokens.google_token_expires_at <= Date.now()))
+    !decrypted.refreshToken &&
+    (!decrypted.accessToken ||
+      (decrypted.expiryDate !== null &&
+        decrypted.expiryDate <= Date.now()))
   ) {
     throw new Error('Google連携の有効期限が切れています。Googleアカウントで再ログインしてください。')
   }
@@ -36,8 +43,8 @@ async function getAccessToken(userId: string | number): Promise<string> {
 
   if (
     refreshed.access_token &&
-    (refreshed.access_token !== savedTokens.google_access_token ||
-      refreshed.expiry_date !== savedTokens.google_token_expires_at)
+    (refreshed.access_token !== decrypted.accessToken ||
+      refreshed.expiry_date !== decrypted.expiryDate)
   ) {
     await UserModel.updateGoogleTokens(Number(userId), {
       accessToken: refreshed.access_token,

@@ -1,4 +1,5 @@
 import { sql } from '../config/db'
+import { getEncryptedTokens, getDecryptedTokens } from '../utils/encryptTokens'
 
 export interface User {
   id: number
@@ -76,10 +77,20 @@ export const UserModel = {
       WHERE id = ${id}
     `
     if (result.length === 0) return null
-    return result[0] as {
+    const rawTokens = result[0] as {
       google_access_token: string | null
       google_refresh_token: string | null
       google_token_expires_at: number | null
+    }
+    const decrypted = getDecryptedTokens({
+      accessToken: rawTokens.google_access_token,
+      refreshToken: rawTokens.google_refresh_token,
+      expiryDate: rawTokens.google_token_expires_at,
+    })
+    return {
+      google_access_token: decrypted.accessToken,
+      google_refresh_token: decrypted.refreshToken,
+      google_token_expires_at: decrypted.expiryDate
     }
   },
 
@@ -117,19 +128,20 @@ export const UserModel = {
       expiryDate: number | null
     }
   ) {
-    if (tokens.refreshToken) {
+    const encrypted = getEncryptedTokens(tokens)
+    if (encrypted.refreshToken) {
       await sql`
         UPDATE users
-        SET google_access_token = ${tokens.accessToken},
-            google_refresh_token = ${tokens.refreshToken},
-            google_token_expires_at = ${tokens.expiryDate}
+        SET google_access_token = ${encrypted.accessToken},
+            google_refresh_token = ${encrypted.refreshToken},
+            google_token_expires_at = ${encrypted.expiryDate}
         WHERE id = ${userId}
       `
     } else {
       await sql`
         UPDATE users
-        SET google_access_token = ${tokens.accessToken},
-            google_token_expires_at = ${tokens.expiryDate}
+        SET google_access_token = ${encrypted.accessToken},
+            google_token_expires_at = ${encrypted.expiryDate}
         WHERE id = ${userId}
       `
     }

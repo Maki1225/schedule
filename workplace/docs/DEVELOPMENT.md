@@ -50,6 +50,9 @@ GOOGLE_CLIENT_ID="your_google_client_id"
 ログアウト時に発行済みJWTを失効させるため、Neon PostgreSQLで
 `backend/migrations/20261102_add_user_token_version.sql` を一度実行してください。
 
+APIレート制限を有効にするため、Neon PostgreSQLで
+`backend/migrations/20261102_create_api_rate_limit_buckets.sql` も一度実行してください。
+
 ## 5. デモの使い方
 
 デモの開始方法、セッションデータの扱い、ローカルでの表示方法は

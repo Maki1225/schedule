@@ -112,7 +112,7 @@ export const GroupController = {
       ORDER BY gm.role, u.name
     `
 
-    const group = { ...result[0], role: access[0].role }
+    const group: Record<string, unknown> = { ...result[0], role: access[0].role }
     if (this.isDemoUser(c)) {
       delete group.invite_code
     }

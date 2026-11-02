@@ -24,12 +24,7 @@ function initGoogleAuth() {
       'profile',
       'https://www.googleapis.com/auth/classroom.course-work.readonly',
       'https://www.googleapis.com/auth/classroom.courses.readonly',
-      'https://www.googleapis.com/auth/userinfo.profile',
-      'https://www.googleapis.com/auth/calendar.app.created',
-      'https://www.googleapis.com/auth/calendar.events.readonly',
-      'https://www.googleapis.com/auth/calendar.events.freebusy',
-      'https://www.googleapis.com/auth/calendar.freebusy',
-      'https://www.googleapis.com/auth/classroom.announcements'
+      'https://www.googleapis.com/auth/calendar.events.readonly'
     ].join(' '),
     
     // 👇 ポップアップモードに戻す

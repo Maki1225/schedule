@@ -24,6 +24,7 @@ function createSqlStore(name: string, windowMs: number): Store<Env> {
         WITH expired AS (
           DELETE FROM api_rate_limit_buckets
           WHERE reset_at <= now()
+          RETURNING bucket_key
         )
         INSERT INTO api_rate_limit_buckets (bucket_key, hits, reset_at)
         VALUES (
@@ -74,7 +75,8 @@ export function createRequestRateLimiter(
   name: string,
   limit: number,
   windowMs: number,
-  store: Store<Env> = createSqlStore(name, windowMs)
+  store: Store<Env> = createSqlStore(name, windowMs),
+  skip: (c: Context<Env>) => boolean = () => false
 ) {
   return rateLimiter<Env>({
     windowMs,
@@ -84,10 +86,22 @@ export function createRequestRateLimiter(
     statusCode: 429,
     standardHeaders: 'draft-7',
     message: { error: 'リクエスト数が上限を超えました。しばらくしてから再試行してください。' },
+    skip,
   })
 }
 
 export const googleAuthRateLimit = createRequestRateLimiter('google-auth', 20, 15 * 60 * 1000)
 export const demoSessionRateLimit = createRequestRateLimiter('demo-session', 30, 15 * 60 * 1000)
 export const inviteCodeRateLimit = createRequestRateLimiter('invite-code', 30, 15 * 60 * 1000)
-export const apiWriteRateLimit = createRequestRateLimiter('api-write', 100, 60 * 1000)
+export const groupInviteCodeRateLimit = createRequestRateLimiter(
+  'group-invite-code',
+  30,
+  15 * 60 * 1000
+)
+export const apiWriteRateLimit = createRequestRateLimiter(
+  'api-write',
+  100,
+  60 * 1000,
+  undefined,
+  (c) => !['POST', 'PUT', 'PATCH', 'DELETE'].includes(c.req.method)
+)
