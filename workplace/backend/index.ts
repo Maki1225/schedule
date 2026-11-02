@@ -4,7 +4,7 @@ import { serve } from '@hono/node-server'
 import { secureHeaders } from 'hono/secure-headers'
 import { cors } from 'hono/cors'
 import { Env } from './src/types/hono'
-import { createOriginGuard, getAllowedOrigins } from './src/middleware/requestSecurity'
+import { createOriginGuard, getAllowedOrigins, requireJsonContentType } from './src/middleware/requestSecurity'
 import { apiWriteRateLimit } from './src/middleware/rateLimit'
 import { bodySizeLimit } from './src/middleware/bodyLimit'
 import { getJwtSecret } from './src/controllers/authController';
@@ -32,6 +32,7 @@ const allowedOrigins = getAllowedOrigins()
 
 app.use(
   '/api/*',
+  requireJsonContentType,
   createOriginGuard(allowedOrigins),
   cors({
     origin: (origin) => {

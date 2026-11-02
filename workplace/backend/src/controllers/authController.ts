@@ -96,7 +96,7 @@ export const AuthController = {
       setCookie(c, 'token', token, {
         httpOnly: true,
         secure: true,
-        sameSite: 'None',
+        sameSite: 'Lax',
         path: '/',
         maxAge: 60 * 60 * 24,
       })
