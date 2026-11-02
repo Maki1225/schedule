@@ -1,4 +1,3 @@
-
 import { Hono } from 'hono'
 import { Env } from '../types/hono'
 import { authCheck, rejectDemoAccess } from '../middleware/authMiddleware'

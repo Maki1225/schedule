@@ -15,20 +15,14 @@ function makeInviteCode() {
 }
 
 export const GroupController = {
-  // デモモードかチェック
-  isDemoUser(c: Context<Env>) {
-    const jwtPayload = c.get('jwtPayload')
-    return jwtPayload?.mode === 'demo'
-  },
-
-  // グループ一覧
+  // グループ一覧（color を追加取得）
   async list(c: Context<Env>) {
     const userId = getUserId(c)
     const isDemo = c.get('jwtPayload').mode === 'demo'
 
     if (isDemo) {
       const groups = await sql`
-        SELECT g.id, g.name, gm.role
+        SELECT g.id, g.group_name, g.color, gm.role
         FROM groups g
         JOIN group_members gm ON gm.group_id = g.id
         WHERE gm.user_id = ${userId} AND g.is_demo = true
@@ -38,7 +32,7 @@ export const GroupController = {
     }
 
     const groups = await sql`
-      SELECT g.id, g.name, g.invite_code, gm.role
+      SELECT g.id, g.group_name, g.color, g.invite_code, gm.role
       FROM groups g
       JOIN group_members gm ON gm.group_id = g.id
       WHERE gm.user_id = ${userId}
@@ -48,7 +42,7 @@ export const GroupController = {
     return c.json({ groups })
   },
 
-  // グループ作成
+  // グループ作成（color に対応）
   async create(c: Context<Env>) {
     try {
       const userId = getUserId(c)
@@ -135,7 +129,7 @@ export const GroupController = {
     }
 
     const result = await sql`
-      SELECT id, name, invite_code, created_by, is_demo
+      SELECT id, name, invite_code, created_by, is_demo, color, invite_code
       FROM groups
       WHERE id = ${groupId}
     `
@@ -145,7 +139,7 @@ export const GroupController = {
     }
 
     const members = await sql`
-      SELECT u.id, u.name, u.email, gm.role
+      SELECT u.id, u.name, u.email, u.picture, gm.role
       FROM group_members gm
       JOIN users u ON u.id = gm.user_id
       WHERE gm.group_id = ${groupId}
@@ -158,6 +152,56 @@ export const GroupController = {
     }
 
     return c.json({ group, members })
+  },
+
+  // グループ情報の編集（管理者/admin・owner 専用）
+  async update(c: Context<Env>) {
+    const userId = getUserId(c)
+    const groupId = Number(c.req.param('id'))
+
+    if (!Number.isInteger(groupId) || groupId <= 0) {
+      return c.json({ error: 'グループIDが不正です' }, 400)
+    }
+
+    // 1. ユーザーの権限を検証
+    const access = await sql`
+      SELECT role FROM group_members
+      WHERE group_id = ${groupId} AND user_id = ${userId}
+    `
+
+    if (access.length === 0) {
+      return c.json({ error: 'このグループに参加していません' }, 403)
+    }
+
+    const role = access[0].role
+    if (role !== 'admin' && role !== 'owner') {
+      return c.json({ error: 'グループ情報の編集権限がありません（管理者のみ変更可能）' }, 403)
+    }
+
+    // 2. 更新データの抽出
+    const body = await c.req.json().catch(() => ({}))
+    const groupName = typeof body.groupName === 'string' ? body.groupName.trim() : (typeof body.name === 'string' ? body.name.trim() : null)
+    const color = typeof body.color === 'string' && /^#[0-9A-Fa-f]{6}$/.test(body.color.trim()) ? body.color.trim() : null
+
+    if (groupName !== null && (groupName.length === 0 || groupName.length > 50)) {
+      return c.json({ error: 'グループ名は1〜50文字で入力してください' }, 400)
+    }
+
+    // 3. 更新処理の実行
+    const updated = await sql`
+      UPDATE groups
+      SET 
+        group_name = COALESCE(${groupName}, group_name),
+        color = COALESCE(${color}, color)
+      WHERE id = ${groupId}
+      RETURNING id, group_name, color, invite_code
+    `
+
+    if (updated.length === 0) {
+      return c.json({ error: '対象のグループが見つかりません' }, 404)
+    }
+
+    return c.json({ message: 'グループ情報を更新しました', group: updated[0] })
   },
 
   // 招待コードで参加
@@ -418,8 +462,14 @@ export const GroupController = {
     `.then((r) => r[0].cnt)
 
     const events = await sql`
-      SELECT e.*, creator.name AS creator_name, editor.name AS editor_name
+      SELECT 
+        e.*, 
+        g.color AS group_color,
+        COALESCE(e.subject_color, g.color) AS display_color,
+        creator.name AS creator_name, 
+        editor.name AS editor_name
       FROM events e
+      JOIN groups g ON e.group_id = g.id
       LEFT JOIN users creator ON e.created_by = creator.id
       LEFT JOIN users editor ON e.updated_by = editor.id
       WHERE e.group_id = ${groupId}
@@ -431,7 +481,7 @@ export const GroupController = {
   },
 
   // グループの共有イベント作成
-  async createEvent(c: Context<Env>, data: CreateEventInput) {
+  async createEvent(c: Context<Env>) {
     const userId = getUserId(c)
     const groupId = Number(c.req.param('id'))
 
