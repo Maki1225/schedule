@@ -12,11 +12,43 @@ const googleClient = new OAuth2Client(
   'postmessage' // popup（Code Client）認証用のリダイレクト識別子
 )
 
+const INVALID_JWT_SECRETS = new Set([
+  'your-secret-key',
+  'your_jwt_secret',
+  'jwt_secret',
+  'secret',
+  'changeme',
+  'change-me',
+  'default',
+  'test',
+  'test-secret',
+])
+
 export const getJwtSecret = (): string => {
   const secret = process.env.JWT_SECRET
+
   if (!secret) {
     throw new Error('FATAL: JWT_SECRET environment variable is not set.')
   }
+
+  // 既知のサンプル値/弱い値をブロック（全環境）
+  if (INVALID_JWT_SECRETS.has(secret.toLowerCase())) {
+    throw new Error(
+      'FATAL: JWT_SECRET cannot be a default/sample value. ' +
+      'Generate a secure secret with: openssl rand -hex 32'
+    )
+  }
+
+  // 本番環境では最小長 32 文字を強制（HS256 では 256-bit = 32 bytes 推奨）
+  const isProduction =
+    process.env.NODE_ENV === 'production' || process.env.VERCEL === '1'
+  if (isProduction && secret.length < 32) {
+    throw new Error(
+      `FATAL: JWT_SECRET must be at least 32 characters long (current: ${secret.length}). ` +
+        `Generate a secure secret with: openssl rand -hex 32`
+    )
+  }
+
   return secret
 }
 
@@ -107,7 +139,16 @@ export const AuthController = {
       })
     } catch (err) {
       console.error('Google 認証エラー:', err)
-      return c.json({ error: 'Google 認証処理に失敗しました' }, 500)
+
+      // エラーメッセージから詳細を隠す
+      const isProduction =
+        process.env.NODE_ENV === 'production' || process.env.VERCEL === '1'
+
+      if (isProduction) {
+        return c.json({ error: 'Internal Server Error' }, 500)
+      }
+
+      return c.json({ error: 'Google 認証に失敗しました' }, 500)
     }
   },
 
@@ -122,22 +163,12 @@ export const AuthController = {
       return c.json({ error: 'ユーザーが見つかりません' }, 404)
     }
 
-    let profile = user
-    if (payload.mode !== 'demo' && !isGeneratedProfileAvatar(user.picture)) {
-      const picture = createProfileAvatar(String(user.id))
-      const updatedUser = await UserModel.updatePicture(user.id, picture)
-      if (!updatedUser) {
-        return c.json({ error: 'プロフィール画像を保存できませんでした' }, 500)
-      }
-      profile = updatedUser
-    }
-
     return c.json({
       user: {
-        id: profile.id,
-        name: profile.name,
-        email: profile.email,
-        picture: profile.picture,
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        picture: user.picture,
       },
     })
   },
@@ -187,16 +218,16 @@ export const AuthController = {
             candidate.user_id
           LIMIT 1
         )
-          AND gm.group_id IN (
-            SELECT group_id FROM group_members
-            WHERE user_id = ${userId} AND role = 'admin'
-          )
-          AND NOT EXISTS (
-            SELECT 1 FROM group_members other_member
-            WHERE other_member.group_id = gm.group_id
-              AND other_member.user_id <> ${userId}
-              AND other_member.role = 'admin'
-          )
+        AND gm.group_id IN (
+          SELECT group_id FROM group_members
+          WHERE user_id = ${userId} AND role = 'admin'
+        )
+        AND NOT EXISTS (
+          SELECT 1 FROM group_members other_member
+          WHERE other_member.group_id = gm.group_id
+            AND other_member.user_id <> ${userId}
+            AND other_member.role = 'admin'
+        )
       `,
       sql`
         UPDATE groups
