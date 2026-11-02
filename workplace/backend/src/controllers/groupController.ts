@@ -3,6 +3,7 @@ import { Context } from 'hono'
 import { sql } from '../config/db'
 import { Env } from '../types/hono'
 import { randomBytes } from 'node:crypto'
+import type { CreateEventInput } from '../validators/eventValidators'
 
 function getUserId(c: Context<Env>) {
   return c.get('jwtPayload').id
@@ -13,6 +14,12 @@ function makeInviteCode() {
 }
 
 export const GroupController = {
+  // デモモードかチェック
+  isDemoUser(c: Context<Env>) {
+    const jwtPayload = c.get('jwtPayload')
+    return jwtPayload?.mode === 'demo'
+  },
+
   // グループ一覧
   async list(c: Context<Env>) {
     const userId = getUserId(c)
@@ -106,8 +113,13 @@ export const GroupController = {
       ORDER BY gm.role, u.name
     `
 
+    const group: Record<string, unknown> = { ...result[0], role: access[0].role }
+    if (this.isDemoUser(c)) {
+      delete group.invite_code
+    }
+
     return c.json({
-      group: { ...result[0], role: access[0].role },
+      group,
       members
     })
   },
@@ -291,10 +303,10 @@ export const GroupController = {
   },
 
   // グループの共有イベント作成
-  async createEvent(c: Context<Env>) {
+  async createEvent(c: Context<Env>, data: CreateEventInput) {
     const userId = getUserId(c)
     const groupId = Number(c.req.param('id'))
-    const body = await c.req.json().catch(() => ({}))
+    const body = data
 
     if (!Number.isInteger(groupId) || groupId <= 0) {
       return c.json({ error: 'グループIDが不正です' }, 400)

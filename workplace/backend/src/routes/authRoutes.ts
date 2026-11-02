@@ -2,12 +2,14 @@ import { Hono } from 'hono'
 import { Env } from '../types/hono'
 import { AuthController } from '../controllers/authController'
 import { authCheck, rejectDemoAccess } from '../middleware/authMiddleware'
+import { requireJsonContentType } from '../middleware/requestSecurity'
+import { googleAuthRateLimit } from '../middleware/rateLimit'
 import { GoogleDataController } from '../controllers/googleDataController'
 
 export const authRoutes = new Hono<Env>()
 
 // Google 認可コード (code) によるログイン
-authRoutes.post('/google', async (c) => {
+authRoutes.post('/google', googleAuthRateLimit, requireJsonContentType, async (c) => {
   const body = await c.req.json().catch(() => ({}))
   const code = body.code
 
@@ -23,7 +25,7 @@ authRoutes.post('/google', async (c) => {
 authRoutes.get('/me', authCheck, (c) => AuthController.getMe(c))
 
 // プロフィールのニックネーム更新
-authRoutes.patch('/me', authCheck, rejectDemoAccess, async (c) => {
+authRoutes.patch('/me', requireJsonContentType, authCheck, rejectDemoAccess, async (c) => {
   const body = await c.req.json().catch(() => ({}))
   const name = typeof body.name === 'string' ? body.name.trim() : ''
 
@@ -38,7 +40,7 @@ authRoutes.patch('/me', authCheck, rejectDemoAccess, async (c) => {
 authRoutes.delete('/me', authCheck, rejectDemoAccess, (c) => AuthController.deleteMe(c))
 
 // ログアウト
-authRoutes.post('/logout', (c) => AuthController.logout(c))
+authRoutes.post('/logout', authCheck, rejectDemoAccess, (c) => AuthController.logout(c))
 
 authRoutes.get('/google/classroom/coursework', authCheck, rejectDemoAccess, (c) =>
   GoogleDataController.classroomCoursework(c)

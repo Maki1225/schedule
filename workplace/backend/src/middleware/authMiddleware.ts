@@ -2,48 +2,71 @@ import { Context, Next } from 'hono'
 import { getCookie } from 'hono/cookie'
 import { verify } from 'hono/jwt'
 import { Env, JWTPayload } from '../types/hono'
+import { UserModel } from '../models/userModel'
 
-export const authCheck = async (c: Context<Env>, next: Next) => {
-  const authorization = c.req.header('Authorization')
-  const bearerToken = authorization?.startsWith('Bearer ')
-    ? authorization.slice('Bearer '.length)
-    : undefined
-  const token = bearerToken || getCookie(c, 'token')
+type TokenVersionLookup = (id: string | number) => Promise<number | null>
 
-  if (!token) {
-    // 400 から 401 に変更
-    return c.json({ error: '認証トークンがありません' }, 401)
-  }
+export function createAuthCheck(
+  getTokenVersion: TokenVersionLookup = UserModel.getTokenVersion
+) {
+  return async (c: Context<Env>, next: Next) => {
+    const authorization = c.req.header('Authorization')
+    const bearerToken = authorization?.startsWith('Bearer ')
+      ? authorization.slice('Bearer '.length)
+      : undefined
+    const token = bearerToken || getCookie(c, 'token')
 
-  try {
-    // 2. JWT の検証
+    if (!token) {
+      return c.json({ error: '認証トークンがありません' }, 401)
+    }
+
     const secret = process.env.JWT_SECRET || 'your-secret-key'
-    const payload = await verify(token, secret, 'HS256')
+    let payload: Awaited<ReturnType<typeof verify>>
+    try {
+      payload = await verify(token, secret, 'HS256')
+    } catch (error) {
+      console.error('JWT検証エラー:', error)
+      return c.json({ error: '無効なトークンです' }, 401)
+    }
+
     if (
       (typeof payload.id !== 'string' && typeof payload.id !== 'number') ||
       typeof payload.email !== 'string' ||
       typeof payload.exp !== 'number' ||
+      (payload.mode !== 'demo' &&
+        (typeof payload.token_version !== 'number' ||
+          !Number.isSafeInteger(payload.token_version) ||
+          payload.token_version < 0)) ||
       (payload.mode !== undefined && payload.mode !== 'demo') ||
       (payload.persona !== undefined && typeof payload.persona !== 'string')
     ) {
       return c.json({ error: '無効なトークンです' }, 401)
     }
 
+    if (payload.mode !== 'demo') {
+      const currentTokenVersion = await getTokenVersion(payload.id)
+      if (currentTokenVersion === null || payload.token_version !== currentTokenVersion) {
+        return c.json({ error: '無効なトークンです' }, 401)
+      }
+    }
+
     const jwtPayload: JWTPayload = {
       id: payload.id,
       email: payload.email,
       exp: payload.exp,
+      ...(typeof payload.token_version === 'number'
+        ? { tokenVersion: payload.token_version }
+        : {}),
       ...(payload.mode === 'demo' ? { mode: 'demo' as const } : {}),
       ...(typeof payload.persona === 'string' ? { persona: payload.persona } : {}),
     }
     c.set('jwtPayload', jwtPayload)
 
     await next()
-  } catch (err) {
-    console.error('JWT検証エラー:', err)
-    return c.json({ error: '無効なトークンです' }, 401)
   }
 }
+
+export const authCheck = createAuthCheck()
 
 export const rejectDemoAccess = async (c: Context<Env>, next: Next) => {
   const payload = c.get('jwtPayload')

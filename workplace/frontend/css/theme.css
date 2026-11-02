@@ -250,6 +250,89 @@
   background: var(--surface-raised);
 }
 
+:root[data-theme="dark"] .demo-options {
+  border-bottom: 1px solid var(--border-color);
+  background: var(--surface);
+  color: var(--text-primary);
+}
+
+:root[data-theme="dark"] .demo-options > p,
+:root[data-theme="dark"] .demo-relation-preview-section > p,
+:root[data-theme="dark"] .demo-persona-card .demo-persona-description,
+:root[data-theme="dark"] .demo-persona-card ul {
+  color: var(--text-secondary);
+}
+
+:root[data-theme="dark"] .demo-persona-card {
+  border-color: var(--border-color);
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  box-shadow: 0 4px 14px var(--shadow-color);
+}
+
+:root[data-theme="dark"] .demo-persona-card h3,
+:root[data-theme="dark"] .demo-relation-preview-section h3 {
+  color: var(--text-primary);
+}
+
+:root[data-theme="dark"] .demo-persona-label,
+:root[data-theme="dark"] .demo-persona-card h4 {
+  color: var(--accent) !important;
+}
+
+:root[data-theme="dark"] .demo-relation-preview {
+  border-color: var(--border-color);
+  background: radial-gradient(ellipse at center, var(--surface-raised) 0%, var(--field-bg) 70%);
+}
+
+:root[data-theme="dark"] .demo-relation-preview line {
+  stroke: var(--accent);
+}
+
+:root[data-theme="dark"] .demo-relation-preview line.is-secondary {
+  stroke: #8fc5ff;
+}
+
+:root[data-theme="dark"] .preview-person,
+:root[data-theme="dark"] .preview-group {
+  border-color: var(--border-color);
+  background: var(--surface-muted);
+  color: var(--text-primary);
+  box-shadow: 0 3px 12px var(--shadow-color);
+}
+
+:root[data-theme="dark"] .preview-group {
+  border-color: var(--accent-strong);
+  background: var(--accent-surface);
+  color: var(--accent);
+}
+
+:root[data-theme="dark"] .preview-avatar {
+  border-color: var(--surface-muted);
+}
+
+:root[data-theme="dark"] .demo-button {
+  border-color: var(--accent-strong);
+  background: var(--surface-muted);
+  color: var(--accent);
+}
+
+:root[data-theme="dark"] .demo-button:hover {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+:root[data-theme="dark"] .demo-persona-card button {
+  border-color: var(--accent-strong);
+  background: var(--accent-strong);
+  color: #171326;
+}
+
+:root[data-theme="dark"] .demo-persona-card button:hover {
+  background: var(--accent);
+  color: #171326;
+}
+
 :root[data-theme="dark"] :is(
   .login-button,
   .start-button,
