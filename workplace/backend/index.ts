@@ -6,6 +6,7 @@ import { cors } from 'hono/cors'
 import { Env } from './src/types/hono'
 import { createOriginGuard, getAllowedOrigins } from './src/middleware/requestSecurity'
 import { apiWriteRateLimit } from './src/middleware/rateLimit'
+import { bodySizeLimit } from './src/middleware/bodyLimit'
 import { getJwtSecret } from './src/controllers/authController';
 import eventRoutes from './src/routes/eventRoutes'
 import authRoutes from './src/routes/authRoutes'
@@ -43,11 +44,29 @@ app.use(
     allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization'],
   }),
-  apiWriteRateLimit
+  apiWriteRateLimit,
+  bodySizeLimit()
 )
+
 // 3. エラーハンドラ
+const ERROR_LOG_PREFIX = '★ サーバーエラー詳細'
+
 app.onError((err, c) => {
-  console.error('★ サーバーエラー詳細:', err)
+  const errorId = Math.random().toString(36).slice(-8)
+  console.error(`${ERROR_LOG_PREFIX} [errorId=${errorId}]:`, err)
+
+  const isProduction = process.env.NODE_ENV === 'production'
+
+  if (isProduction) {
+    return c.json(
+      {
+        error: 'Internal Server Error',
+        errorId,
+      },
+      500
+    )
+  }
+
   return c.json(
     {
       error: 'サーバー内部エラーが発生しました',

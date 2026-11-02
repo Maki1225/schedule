@@ -3,6 +3,7 @@ import { Context } from 'hono'
 import { sql } from '../config/db'
 import { Env } from '../types/hono'
 import { randomBytes } from 'node:crypto'
+import type { CreateEventInput } from '../validators/eventValidators'
 
 function getUserId(c: Context<Env>) {
   return c.get('jwtPayload').id
@@ -302,10 +303,10 @@ export const GroupController = {
   },
 
   // グループの共有イベント作成
-  async createEvent(c: Context<Env>) {
+  async createEvent(c: Context<Env>, data: CreateEventInput) {
     const userId = getUserId(c)
     const groupId = Number(c.req.param('id'))
-    const body = await c.req.json().catch(() => ({}))
+    const body = data
 
     if (!Number.isInteger(groupId) || groupId <= 0) {
       return c.json({ error: 'グループIDが不正です' }, 400)
