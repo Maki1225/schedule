@@ -11,6 +11,12 @@
   white-space: nowrap;
 }
 
+:root[data-theme="dark"] .demo-mode-badge {
+  border-color: var(--accent-strong);
+  background: var(--accent-surface);
+  color: var(--accent);
+}
+
 .demo-mode-badge[hidden] {
   display: none;
 }
@@ -22,6 +28,11 @@
   background: #6c63ff;
   color: white;
   cursor: pointer;
+}
+
+:root[data-theme="dark"] #demoModeExitButton {
+  background: var(--accent-strong);
+  color: #171326;
 }
 
 body.demo-mode #accountMenu,
@@ -36,6 +47,11 @@ body.demo-mode #googleIntegrations {
   color: #554de0;
   font-weight: 700;
   text-decoration: none;
+}
+
+:root[data-theme="dark"] #demoInsightsLink,
+:root[data-theme="dark"] .demo-only-link {
+  color: var(--accent);
 }
 
 body.demo-mode #demoInsightsLink,

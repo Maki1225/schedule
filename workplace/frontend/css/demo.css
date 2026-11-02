@@ -704,6 +704,152 @@ select:focus-visible {
   font-size: 12px;
 }
 
+:root[data-theme="dark"] .demo-header,
+:root[data-theme="dark"] .demo-section {
+  border: 1px solid var(--border-color);
+  background: var(--surface);
+  color: var(--text-primary);
+  box-shadow: 0 4px 18px var(--shadow-color);
+}
+
+:root[data-theme="dark"] .demo-nav a {
+  color: var(--text-secondary);
+}
+
+:root[data-theme="dark"] .demo-nav a:hover,
+:root[data-theme="dark"] .demo-nav a[aria-current="page"] {
+  background: var(--accent-surface);
+  color: var(--accent);
+}
+
+:root[data-theme="dark"] .demo-notice {
+  border: 1px solid var(--accent-strong);
+  background: var(--accent-surface);
+  color: var(--text-primary);
+}
+
+:root[data-theme="dark"] .demo-notice strong,
+:root[data-theme="dark"] .eyebrow,
+:root[data-theme="dark"] .group-pill {
+  color: var(--accent);
+}
+
+:root[data-theme="dark"] .demo-status {
+  color: var(--danger);
+}
+
+:root[data-theme="dark"] .section-heading p,
+:root[data-theme="dark"] .map-birthday,
+:root[data-theme="dark"] .map-role,
+:root[data-theme="dark"] .profile-birthday,
+:root[data-theme="dark"] .profile-role,
+:root[data-theme="dark"] .profile-task-count,
+:root[data-theme="dark"] .dialog-birthday,
+:root[data-theme="dark"] .dialog-role {
+  color: var(--text-secondary);
+}
+
+:root[data-theme="dark"] .group-pill {
+  border: 1px solid var(--border-color);
+  background: var(--surface-muted);
+}
+
+:root[data-theme="dark"] .relation-map {
+  border-color: var(--border-color);
+  background: radial-gradient(ellipse at center, #272c3a 0%, #171b25 72%);
+}
+
+:root[data-theme="dark"] .relation-lines line {
+  stroke: #aaa5ff;
+}
+
+:root[data-theme="dark"] .relation-lines .relation-secondary,
+:root[data-theme="dark"] .relation-lines .relation-group-link {
+  stroke: #8fc5ff;
+}
+
+:root[data-theme="dark"] .relation-lines .relation-label rect {
+  fill: var(--surface-muted);
+  stroke: var(--border-color);
+}
+
+:root[data-theme="dark"] .relation-lines .relation-label text {
+  fill: var(--text-primary);
+}
+
+:root[data-theme="dark"] .map-person,
+:root[data-theme="dark"] .map-group,
+:root[data-theme="dark"] .profile-card {
+  border-color: var(--border-color);
+  background: var(--surface-raised);
+  color: var(--text-primary);
+}
+
+:root[data-theme="dark"] .map-person.is-current-profile {
+  border-color: var(--accent-strong);
+  background: var(--accent-surface);
+  box-shadow: 0 8px 26px var(--shadow-color);
+}
+
+:root[data-theme="dark"] .profile-card.is-current-profile {
+  border-color: var(--accent-strong);
+  background: var(--accent-surface);
+}
+
+:root[data-theme="dark"] .map-person:hover,
+:root[data-theme="dark"] .map-person:focus-visible,
+:root[data-theme="dark"] .profile-card.is-highlighted {
+  border-color: var(--accent);
+  background: var(--surface-hover);
+}
+
+:root[data-theme="dark"] .map-name,
+:root[data-theme="dark"] .profile-card-heading h3,
+:root[data-theme="dark"] .profile-dialog h2 {
+  color: var(--text-primary);
+}
+
+:root[data-theme="dark"] .map-current-label,
+:root[data-theme="dark"] .map-task-count,
+:root[data-theme="dark"] .profile-task-count strong,
+:root[data-theme="dark"] .dialog-task-count strong {
+  color: var(--accent);
+}
+
+:root[data-theme="dark"] .map-current-label,
+:root[data-theme="dark"] .dialog-task-count {
+  background: var(--accent-surface);
+}
+
+:root[data-theme="dark"] .map-group {
+  border-color: var(--accent-strong);
+  background: var(--surface-muted);
+  color: var(--accent);
+}
+
+:root[data-theme="dark"] .profile-actions button {
+  border-color: var(--border-color);
+  background: var(--surface-muted);
+  color: var(--text-primary);
+}
+
+:root[data-theme="dark"] .profile-actions button:last-child {
+  border-color: var(--accent-strong);
+  background: var(--accent-strong);
+  color: #171326;
+}
+
+:root[data-theme="dark"] .profile-dialog {
+  border: 1px solid var(--border-color);
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  box-shadow: 0 14px 60px var(--shadow-color);
+}
+
+:root[data-theme="dark"] .dialog-close {
+  color: var(--text-primary);
+}
+
 .profile-dialog {
   position: fixed;
   width: min(440px, calc(100% - 32px));
