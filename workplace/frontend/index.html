@@ -10,6 +10,9 @@
   <meta name="description" content="Study Plannerは、学校の課題や日々の予定をカレンダーで管理できるWebアプリです。">
 
   <link rel="stylesheet" href="css/landing.css">
+  <link rel="stylesheet" href="css/theme.css?v=2">
+  <script src="js/theme.js" defer></script>
+  <script>window.API_BASE_URL = "https://schedule-backend-navy.vercel.app";</script>
 </head>
 
 <body>
@@ -21,14 +24,81 @@
 
     <nav>
       <a href="#features" class="nav-link">機能紹介</a>
-      <a href="login.html" class="login-button">
+      <a href="login.html" class="login-button" data-auth-link>
         ログイン
       </a>
+      <button type="button" class="demo-button" id="demoModeButton" aria-expanded="false" aria-controls="demoModeOptions">
+        デモモード
+      </button>
     </nav>
 
   </header>
 
   <main>
+    <section id="demoModeOptions" class="demo-options" aria-label="デモプロフィール" hidden>
+      <h2>デモプロフィールを選択</h2>
+      <p>課題やメッセージはデモ画面を離れるか再読み込みすると消去されます。</p>
+      <section class="demo-relation-preview-section" aria-labelledby="demoRelationPreviewTitle">
+        <h3 id="demoRelationPreviewTitle">クラスのつながり</h3>
+        <p>同じクラスの4人が、実験班やグループワークを通じて協力します。</p>
+        <div class="demo-relation-preview" role="img" aria-label="ゆいと、あおい、はるひ、なみが実験班とグループワークでつながっています">
+          <svg viewBox="0 0 800 300" preserveAspectRatio="none" aria-hidden="true">
+            <line x1="140" y1="66" x2="400" y2="112"></line>
+            <line x1="660" y1="66" x2="400" y2="112"></line>
+            <line x1="140" y1="234" x2="400" y2="112"></line>
+            <line x1="660" y1="234" x2="400" y2="112"></line>
+            <line class="is-secondary" x1="140" y1="66" x2="400" y2="188"></line>
+            <line class="is-secondary" x1="660" y1="66" x2="400" y2="188"></line>
+            <line class="is-secondary" x1="140" y1="234" x2="400" y2="188"></line>
+            <line class="is-secondary" x1="660" y1="234" x2="400" y2="188"></line>
+          </svg>
+          <span class="preview-person preview-yuito"><span class="preview-avatar avatar-violet" aria-hidden="true"><span class="preview-pixels"><span></span><span></span><span></span><span></span></span></span>ゆいと</span>
+          <span class="preview-person preview-aoi"><span class="preview-avatar avatar-blue" aria-hidden="true"><span class="preview-pixels"><span></span><span></span><span></span><span></span></span></span>あおい</span>
+          <span class="preview-person preview-haruhi"><span class="preview-avatar avatar-green" aria-hidden="true"><span class="preview-pixels"><span></span><span></span><span></span><span></span></span></span>はるひ</span>
+          <span class="preview-person preview-nami"><span class="preview-avatar avatar-orange" aria-hidden="true"><span class="preview-pixels"><span></span><span></span><span></span><span></span></span></span>なみ</span>
+          <span class="preview-group preview-lab">🧪 実験班</span>
+          <span class="preview-group preview-work">📝 グループワーク</span>
+        </div>
+      </section>
+      <div class="demo-option-list">
+        <article class="demo-persona-card">
+          <p class="demo-persona-label">PROFILE 01</p>
+          <h3>ゆいと（男）</h3>
+          <p class="demo-persona-description">
+            2月14日生まれ。実験班の班長としてレポートや制作課題を主導します。
+          </p>
+          <button type="button" data-demo-persona="yuito">ゆいととしてログイン</button>
+        </article>
+
+        <article class="demo-persona-card">
+          <p class="demo-persona-label">PROFILE 02</p>
+          <h3>あおい（女）</h3>
+          <p class="demo-persona-description">
+            8月22日生まれ。テスト対策ノートの共有や講義予定の確認が中心です。
+          </p>
+          <button type="button" data-demo-persona="aoi">あおいとしてログイン</button>
+        </article>
+
+        <article class="demo-persona-card">
+          <p class="demo-persona-label">PROFILE 03</p>
+          <h3>はるひ（男）</h3>
+          <p class="demo-persona-description">
+            4月9日生まれ。進捗報告や過去問共有を担当する、効率重視の助け合いタイプです。
+          </p>
+          <button type="button" data-demo-persona="haruhi">はるひとしてログイン</button>
+        </article>
+
+        <article class="demo-persona-card">
+          <p class="demo-persona-label">PROFILE 04</p>
+          <h3>なみ（女）</h3>
+          <p class="demo-persona-description">
+            7月18日生まれ。部活と課題を両立中で、仲間からのリマインドを受けるムードメーカーです。
+          </p>
+          <button type="button" data-demo-persona="nami">なみとしてログイン</button>
+        </article>
+      </div>
+      <p id="demoModeMessage" role="status" aria-live="polite"></p>
+    </section>
 
     <!-- アプリ紹介 -->
     <section class="hero">
@@ -50,9 +120,12 @@
           Webアプリです。
         </p>
 
-        <a href="login.html" class="start-button">
+        <a href="login.html" class="start-button" data-auth-link>
           ログインして始める
         </a>
+        <button type="button" class="start-button demo-start-button" id="heroDemoModeButton">
+          デモモードを試す
+        </button>
 
       </div>
 
@@ -174,7 +247,7 @@
         課題や予定の管理を始めましょう。
       </p>
 
-      <a href="login.html" class="start-button">
+      <a href="login.html" class="start-button" data-auth-link>
         ログイン
       </a>
 
@@ -198,6 +271,9 @@
     </nav>
 
   </footer>
+
+  <script src="js/common-auth.js"></script>
+  <script src="js/landing.js"></script>
 
 </body>
 

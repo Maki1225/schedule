@@ -1,17 +1,19 @@
-# Schedule Management App
+# Study Planner
 
 ## 📋 概要
-Google アカウントでログインして、予定や課題をカレンダーで一元管理できるスケジュール管理アプリです。グループを作って、メンバーと予定を共有することもできます。
+Google アカウントでログインして、予定や課題をカレンダーで一元管理できるスケジュール管理アプリです。グループを作ってメンバーと予定・課題を共有し、グループ内チャットで連絡できます。
 
 ## 主な機能
 
 - Google OAuth 認証
 - カレンダー表示 (FullCalendar)
-- 予題・課題の管理
+- 予定・課題の管理と作成者・最終編集者の表示
 - ダッシュボード (件数表示)
-- グループ共有
+- グループ作成・招待コードによる参加と予定・課題の共有
+- グループ内チャット (課題追加時の自動通知)
 - プロフィールの表示・編集
 - レスポンシブデザイン
+- 4人のプロフィール・クラス相関図を試せるデモモード
 
 ## 技術スタック
 
@@ -31,16 +33,18 @@ schedule/
     ├── frontend/
     └── docs/
       ├── API.md
+      ├── DEMO.md
       ├── DEVELOPMENT.md
       └── CONTRIBUTING.md
 
 ## クイックスタート
 
-- Node.js 22 以上が必要です
-- Google Cloud で OAuth クライアントを作成します
-- .env ファイルを作成します (`.gitignore` で除外済みです)
+- Node.js 22 以上が必要です。
+- Google Cloud で OAuth クライアントを作成します。
+- .env ファイルを作成します (`.gitignore` で除外済みです)。
 
 詳しい手順は [開発者ガイド](./workplace/docs/DEVELOPMENT.md) を参照してください。
+デモをすぐに試したい方は [デモの使い方](./workplace/docs/DEMO.md) を参照してください。
 
 ## 環境変数
 
@@ -73,6 +77,8 @@ schedule/
 | グループ | `POST /api/groups` | グループの作成 |
 | グループ | `POST /api/groups/join` | 招待コードで参加 |
 | グループ | `GET /api/groups/:id/events` | グループの共有予定 (メンバーのみ) |
+| チャット | `GET /api/groups/:id/messages` | グループチャットの履歴・新着メッセージ |
+| チャット | `POST /api/groups/:id/messages` | グループチャットへの送信 |
 | ユーザー | `GET /api/users/me` | プロフィールの取得 |
 | ユーザー | `PUT /api/users/me` | プロフィールの更新 |
 
@@ -93,6 +99,7 @@ schedule/
 ## ドキュメント
 
 - [開発者ガイド](./workplace/docs/DEVELOPMENT.md)
+- [デモの使い方](./workplace/docs/DEMO.md)
 - [API 仕様](./workplace/docs/API.md)
 - [コントリビューションガイド](./workplace/docs/CONTRIBUTING.md)
 

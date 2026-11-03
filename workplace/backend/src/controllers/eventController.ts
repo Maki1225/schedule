@@ -22,15 +22,38 @@ export const EventController = {
         return c.json({ error: 'このグループに予定を作成する権限がありません' }, 403)
       }
 
-      const [newEvent] = await sql`
-        INSERT INTO events (
-          group_id, created_by, title, description, start_time, end_time, subject, subject_color
-        )
-        VALUES (
-          ${group_id}, ${user.id}, ${title}, ${description ?? null}, ${start_time}, ${end_time}, ${subject ?? null}, ${subject_color ?? null}
-        )
-        RETURNING *
-      `
+      const eventQueries = [
+        sql`
+          INSERT INTO events (
+            group_id, created_by, updated_by, title, description, start_time, end_time, subject, subject_color
+          )
+          VALUES (
+            ${group_id}, ${user.id}, ${user.id}, ${title}, ${description ?? null}, ${start_time}, ${end_time}, ${subject ?? null}, ${subject_color ?? null}
+          )
+          RETURNING *
+        `,
+      ]
+
+      if (description?.startsWith('[課題]')) {
+        const deadline = new Intl.DateTimeFormat('ja-JP', {
+          timeZone: 'Asia/Tokyo',
+          year: 'numeric',
+          month: 'numeric',
+          day: 'numeric',
+        }).format(new Date(end_time))
+        eventQueries.push(sql`
+          INSERT INTO group_chat_messages (group_id, sender_id, body, message_type)
+          VALUES (
+            ${group_id},
+            ${user.id},
+            ${`課題「${title}」を追加しました（提出期限：${deadline}）。`},
+            'task'
+          )
+        `)
+      }
+
+      const [createdEvents] = await sql.transaction(eventQueries)
+      const newEvent = createdEvents[0]
 
       return c.json({ message: '予定を作成しました', event: newEvent }, 201)
     } catch (err) {
@@ -39,15 +62,23 @@ export const EventController = {
     }
   },
 
-  // 2. 自分が所属する特定グループの予定一覧取得 (GET /api/events?groupId=xx)
+  // 2. 自分が所属する特定グループの予定一覧取得 (GET /api/events?groupId=xx&page=1&limit=20)
   async getByGroup(c: AppContext) {
     try {
       const user = c.get('jwtPayload')
       const groupId = c.req.query('groupId')
+      const page = Number(c.req.query('page') || '1')
+      const limit = Number(c.req.query('limit') || '20')
 
       if (!groupId) {
         return c.json({ error: 'groupId が指定されていません' }, 400)
       }
+
+      if (page < 1 || limit < 1) {
+        return c.json({ error: 'page と limit は1以上の値で指定してください' }, 400)
+      }
+
+      const offset = (page - 1) * limit
 
       const [membership] = await sql`
         SELECT role FROM group_members WHERE user_id = ${user.id} AND group_id = ${groupId}
@@ -56,17 +87,24 @@ export const EventController = {
         return c.json({ error: 'このグループの予定を閲覧する権限がありません' }, 403)
       }
 
+      const count = await sql`
+        SELECT COUNT(*) as cnt FROM events WHERE group_id = ${groupId}
+      `.then((r) => r[0].cnt)
+
       const events = await sql`
         SELECT
           e.*,
-          u.name as creator_name
+          creator.name as creator_name,
+          editor.name as editor_name
         FROM events e
-        LEFT JOIN users u ON e.created_by = u.id
+        LEFT JOIN users creator ON e.created_by = creator.id
+        LEFT JOIN users editor ON e.updated_by = editor.id
         WHERE e.group_id = ${groupId}
         ORDER BY e.start_time ASC
+        LIMIT ${limit} OFFSET ${offset}
       `
 
-      return c.json({ events }, 200)
+      return c.json({ events, pagination: { page, limit, total: count } }, 200)
     } catch (err) {
       console.error('[EventController.getByGroup Error]:', err)
       return c.json({ error: '予定の取得に失敗しました' }, 500)
@@ -91,7 +129,7 @@ export const EventController = {
       }
 
       // 作成者本人または管理者(admin)のみ更新可
-      if (existingEvent.created_by !== user.id && existingEvent.role !== 'admin') {
+      if (String(existingEvent.created_by) !== String(user.id) && existingEvent.role !== 'admin') {
         return c.json({ error: 'この予定を更新する権限がありません' }, 403)
       }
 
@@ -115,7 +153,9 @@ export const EventController = {
             start_time = ${start_time},
             end_time = ${end_time},
             subject = ${subject},
-            subject_color = ${subject_color}
+            subject_color = ${subject_color},
+            updated_by = ${user.id},
+            updated_at = CURRENT_TIMESTAMP
         WHERE id = ${eventId}
         RETURNING *
       `
@@ -144,7 +184,7 @@ export const EventController = {
         return c.json({ error: '予定が見つかりません' }, 404)
       }
 
-      if (target.created_by !== user.id && target.role !== 'admin') {
+      if (String(target.created_by) !== String(user.id) && target.role !== 'admin') {
         return c.json({ error: 'この予定を削除する権限がありません' }, 403)
       }
 

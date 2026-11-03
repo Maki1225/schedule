@@ -1,0 +1,611 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #f5f6fa;
+  color: #333;
+  font-family: "Yu Gothic", "Meiryo", sans-serif;
+}
+
+.group-header {
+  min-height: 70px;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 12px clamp(18px, 5vw, 64px);
+  background: white;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 8%);
+}
+
+.group-header a {
+  color: #6C63FF;
+  text-decoration: none;
+}
+
+.group-header .brand {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.group-header nav {
+  display: flex;
+  gap: 20px;
+}
+
+.group-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 20px 80px;
+}
+
+.page-heading {
+  margin-bottom: 24px;
+}
+
+.page-heading h1 {
+  margin: 0;
+  font-size: clamp(28px, 4vw, 38px);
+}
+
+.page-heading p {
+  color: #666;
+}
+
+.eyebrow {
+  margin: 0 0 6px;
+  color: #6C63FF;
+  font-size: 12px;
+  font-weight: bold;
+  letter-spacing: .12em;
+}
+
+.group-view-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #dedfee;
+}
+
+.view-tab {
+  padding: 12px 18px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  color: #555;
+  font: inherit;
+  cursor: pointer;
+}
+
+.view-tab.active {
+  border-bottom-color: #6C63FF;
+  color: #5149d6;
+  font-weight: bold;
+}
+
+.view-tab:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+.group-view[hidden],
+.group-card[hidden] {
+  display: none;
+}
+
+.group-layout {
+  display: grid;
+  grid-template-columns: minmax(240px, 320px) minmax(0, 1fr);
+  align-items: start;
+  gap: 20px;
+}
+
+.group-sidebar,
+.group-main {
+  display: grid;
+  gap: 18px;
+}
+
+.group-card {
+  padding: clamp(18px, 3vw, 28px);
+  border-radius: 16px;
+  background: white;
+  box-shadow: 0 4px 16px rgb(0 0 0 / 7%);
+}
+
+.group-card h2 {
+  margin: 0 0 16px;
+}
+
+.groups-list,
+.member-list {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.groups-list button {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #e3e4ee;
+  border-radius: 10px;
+  background: #f8f8fc;
+  color: inherit;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.groups-list button[aria-current="true"] {
+  border-color: #6C63FF;
+  background: #eeedff;
+  color: #5149d6;
+  font-weight: bold;
+}
+
+.muted {
+  color: #707384;
+}
+
+.group-actions summary {
+  color: #5149d6;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.group-actions form {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.join-group-message {
+  min-height: 1.5em;
+  margin: 0;
+  color: #5149d6;
+}
+
+.join-group-message.error {
+  color: #c62828;
+}
+
+.group-actions label {
+  font-weight: bold;
+}
+
+.group-actions input {
+  width: 100%;
+  min-width: 0;
+  padding: 11px 12px;
+  border: 1px solid #cfd1dc;
+  border-radius: 8px;
+  font: inherit;
+}
+
+.group-actions button,
+#copyInviteCode {
+  padding: 10px 14px;
+  border: 0;
+  border-radius: 8px;
+  background: #6C63FF;
+  color: white;
+  font: inherit;
+  cursor: pointer;
+}
+
+.group-actions button:disabled {
+  opacity: .6;
+  cursor: wait;
+}
+
+.danger-button {
+  padding: 10px 14px;
+  border: 1px solid #c62828;
+  border-radius: 8px;
+  background: white;
+  color: #b71c1c;
+  font: inherit;
+  cursor: pointer;
+}
+
+.danger-button:hover {
+  background: #fff3f3;
+}
+
+.danger-button:disabled {
+  opacity: .6;
+  cursor: wait;
+}
+
+.group-message {
+  min-height: 1.5em;
+  color: #5149d6;
+}
+
+.group-message.error {
+  color: #c62828;
+}
+
+.empty-state {
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.selected-group-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.selected-group-heading h2 {
+  margin: 0;
+}
+
+.invite-code {
+  padding: 12px;
+  border-radius: 8px;
+  background: #f2f1ff;
+  font-family: ui-monospace, monospace;
+  font-size: 16px;
+  overflow-wrap: anywhere;
+}
+
+.shared-items {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 28px;
+}
+
+.group-chat {
+  margin-top: 24px;
+  padding: clamp(16px, 2.5vw, 24px);
+  border: 1px solid #e6e5f1;
+  border-radius: 14px;
+  background: #fbfbff;
+}
+
+.group-chat-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.group-chat-heading h3 {
+  margin: 0;
+}
+
+.group-chat-heading p,
+#groupChatStatus {
+  margin: 4px 0 0;
+  color: #707384;
+  font-size: 13px;
+}
+
+#groupChatStatus.error {
+  color: #b71c1c;
+}
+
+.group-chat-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  min-height: 120px;
+  max-height: 320px;
+  overflow-y: auto;
+  margin: 14px 0;
+  padding: 12px;
+  border: 1px solid #e7e7ef;
+  border-radius: 10px;
+  background: white;
+}
+
+.group-chat-empty {
+  margin: auto;
+  color: #707384;
+  text-align: center;
+}
+
+.group-chat-message {
+  align-self: flex-start;
+  max-width: min(85%, 620px);
+  padding: 8px 11px;
+  border-radius: 10px 10px 10px 3px;
+  background: #eeedff;
+  overflow-wrap: anywhere;
+}
+
+.group-chat-message.is-mine {
+  align-self: flex-end;
+  border-radius: 10px 10px 3px 10px;
+  background: #e6f2ff;
+}
+
+.group-chat-message.is-task {
+  align-self: center;
+  max-width: 100%;
+  background: #f0f0f4;
+  color: #60606b;
+  text-align: center;
+}
+
+.group-chat-message strong,
+.group-chat-message time {
+  display: block;
+  color: #686878;
+  font-size: 11px;
+}
+
+.group-chat-message p {
+  margin: 2px 0;
+  white-space: pre-wrap;
+}
+
+.group-chat-form {
+  display: flex;
+  gap: 8px;
+}
+
+.group-chat-form input {
+  flex: 1;
+  min-width: 0;
+  min-height: 42px;
+  padding: 8px 11px;
+  border: 1px solid #cfd1dc;
+  border-radius: 8px;
+  font: inherit;
+}
+
+.group-chat-form button {
+  min-width: 82px;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 8px;
+  background: #6C63FF;
+  color: white;
+  font: inherit;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.group-chat-form button:disabled {
+  cursor: wait;
+  opacity: .6;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.demo-only-link {
+  display: none;
+}
+
+body.demo-mode .demo-only-link {
+  display: inline;
+}
+
+.shared-items > section {
+  min-width: 0;
+}
+
+.shared-items h3,
+#groupOverview > h3 {
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e4e5ee;
+}
+
+.shared-event-card {
+  margin: 10px 0;
+  padding: 14px;
+  border-left: 4px solid #6C63FF;
+  border-radius: 8px;
+  background: #f6f7ff;
+  overflow-wrap: anywhere;
+}
+
+.shared-event-card h4 {
+  margin: 0 0 6px;
+}
+
+.shared-event-card p {
+  margin: 6px 0 0;
+  color: #626577;
+}
+
+.event-audit-metadata {
+  margin-top: 10px;
+  color: #737585;
+  font-size: 12px;
+}
+
+.event-audit-metadata p {
+  margin: 3px 0 0;
+}
+
+.shared-event-actions,
+.event-action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.shared-event-actions button,
+.event-action-buttons button {
+  padding: 7px 10px;
+  border: 1px solid #cfd1dc;
+  border-radius: 7px;
+  background: white;
+  color: #333;
+  font: inherit;
+  cursor: pointer;
+}
+
+.shared-event-actions .event-delete-button,
+.event-action-buttons .event-delete-button {
+  border-color: #c62828;
+  color: #b71c1c;
+}
+
+.calendar-heading {
+  margin-bottom: 20px;
+}
+
+.calendar-heading h2 {
+  margin: 0;
+}
+
+#groupCalendar {
+  min-width: 0;
+  min-height: 0;
+  overflow: visible;
+}
+
+@media (max-width: 760px) {
+  .group-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .shared-items {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .group-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .group-header nav {
+    gap: 14px;
+  }
+
+  .view-tab {
+    flex: 1;
+    padding: 10px 8px;
+    font-size: 14px;
+  }
+
+  .selected-group-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+/* 管理者用ボタン */
+.admin-button {
+  padding: 10px 16px;
+  border: 1px solid #cfd1dc;
+  border-radius: 8px;
+  background: white;
+  color: #333;
+  font: inherit;
+  font-weight: bold;
+  cursor: pointer;
+  margin-left: 8px;
+}
+
+.admin-button:disabled {
+  cursor: not-allowed;
+  opacity: .6;
+}
+
+.admin-button:hover:not(:disabled) {
+  border-color: #6C63FF;
+  color: #5149d6;
+}
+
+/* メンバー削除ボタン */
+.remove-member-btn {
+  padding: 4px 8px;
+  border: 1px solid #c62828;
+  border-radius: 6px;
+  background: white;
+  color: #b71c1c;
+  font-size: 11px;
+  cursor: pointer;
+  margin-left: auto;
+}
+
+.remove-member-btn:hover {
+  background: #c62828;
+  color: white;
+}
+
+/* 管理アクションメニュー */
+.admin-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.admin-hint {
+  font-size: 12px;
+  color: #707384;
+  margin: 0;
+}
+
+/* 招待コードアクション */
+.invite-code-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+/* メンバーリストのヘッダー */
+.member-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+/* メンバーリストのアイテムにボタンを含める場合のレイアウト */
+.member-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border: 1px solid #e3e4ee;
+  border-radius: 8px;
+  background: #f8f8fc;
+}
+
+/* モバイル対応 */
+@media (max-width: 480px) {
+  .invite-code-actions {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .admin-button {
+    margin-left: 0;
+    margin-top: 8px;
+    width: 100%;
+  }
+
+  .remove-member-btn {
+    margin-left: 0;
+    margin-top: 4px;
+  }
+}

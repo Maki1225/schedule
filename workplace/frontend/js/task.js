@@ -1,45 +1,28 @@
 // 課題一覧の取得と表示
 async function loadTasks() {
   try {
-    const groupId = localStorage.getItem('selectedGroupId');
-
-    if (!groupId) {
-      renderTaskList([]);
-      return;
-    }
-
-    const res = await fetch(
-      `${API_BASE_URL}/api/events?groupId=${encodeURIComponent(groupId)}`,
-      {
-        method: 'GET',
-        credentials: 'include',
-      }
+    await window.EventActions.ready;
+    const tasks = await window.EventListFilters.getEvents('task');
+    renderTaskList(
+      tasks,
+      window.EventListFilters.selectedGroupCount('task') === 0
+        ? '表示するグループを選択してください。'
+        : '課題はありません。'
     );
-
-    if (res.status === 401) {
-      window.location.href = 'login.html';
-      return;
-    }
-
-    if (!res.ok) {
-      console.error('課題の取得に失敗しました:', res.status);
-      return;
-    }
-
-    const data = await res.json();
-
-    const tasks = (data.events || []).filter(event =>
-      (event.description || '').startsWith('[課題]')
-    );
-
-    renderTaskList(tasks);
   } catch (err) {
     console.error('課題取得エラー:', err);
+    renderTaskList([], '課題一覧を読み込めませんでした。');
   }
 }
 
 // 課題カードの表示
-function renderTaskList(tasks) {
+function renderTaskList(tasks, emptyMessage = '課題はありません。') {
+  const taskPanel = document.getElementById('taskPanel');
+  const taskCount = document.getElementById('taskCount');
+  if (taskCount && taskPanel && !taskPanel.hidden) {
+    taskCount.textContent = String(tasks.length);
+  }
+
   const container = document.getElementById('taskList');
   if (!container) return;
 
@@ -47,7 +30,7 @@ function renderTaskList(tasks) {
 
   if (tasks.length === 0) {
     const message = document.createElement('p');
-    message.textContent = '課題はありません。';
+    message.textContent = emptyMessage;
     container.appendChild(message);
     return;
   }
@@ -57,16 +40,34 @@ function renderTaskList(tasks) {
     card.className = 'task-card';
 
     const title = document.createElement('h3');
-    title.textContent = task.title;
+    title.textContent = task.title || 'タイトルなし';
 
+    const group = document.createElement('p');
+    group.className = 'event-list-group-name';
+    group.textContent = `👥 ${task.group_name || 'グループ不明'}`;
+    const start = document.createElement('p');
+    start.textContent = `🕐 開始: ${task.start_time
+      ? new Date(task.start_time).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })
+      : '未設定'
+      }`;
     const deadline = document.createElement('p');
     deadline.textContent = `📅 期限: ${task.end_time
-      ? new Date(task.end_time).toLocaleDateString('ja-JP')
+      ? new Date(task.end_time).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })
       : '未設定'
       }`;
 
     card.appendChild(title);
+    card.appendChild(group);
+    card.appendChild(start);
     card.appendChild(deadline);
+    const details = String(task.description || '').replace(/^\[課題\]\s*/, '').trim();
+    if (details) {
+      const description = document.createElement('p');
+      description.textContent = `📝 ${details}`;
+      card.appendChild(description);
+    }
+    window.EventActions.appendAuditMetadata(card, task);
+    window.EventActions.addControls(card, task);
     container.appendChild(card);
   });
 }
@@ -74,10 +75,11 @@ function renderTaskList(tasks) {
 // 課題の追加
 async function addTask(title, deadline, description) {
   try {
-    const groupId = localStorage.getItem('selectedGroupId');
+    await EventCreation.ready;
+    const groupId = EventCreation.selectedGroupId('taskGroupId');
 
     if (!groupId) {
-      alert('先にグループを作成するか、グループに参加してください。');
+      alert('課題の保存先グループを選択してください。');
       return false;
     }
 
@@ -94,6 +96,23 @@ async function addTask(title, deadline, description) {
       return false;
     }
 
+    const descriptionText = `[課題] ${description || ''}`;
+    let shouldCreate;
+    try {
+      shouldCreate = await confirmNoSimilarEvent({
+        groupId,
+        kind: 'task',
+        title,
+        description: descriptionText,
+        endTime: endTime.toISOString(),
+      });
+    } catch (err) {
+      console.error('課題の重複候補確認に失敗しました:', err);
+      alert(err.message || '重複候補を確認できませんでした。');
+      return false;
+    }
+    if (!shouldCreate) return false;
+
     const res = await fetch(`${API_BASE_URL}/api/events`, {
       method: 'POST',
       headers: {
@@ -103,7 +122,7 @@ async function addTask(title, deadline, description) {
       body: JSON.stringify({
         group_id: Number(groupId),
         title,
-        description: `[課題] ${description || ''}`,
+        description: descriptionText,
         start_time: startTime.toISOString(),
         end_time: endTime.toISOString(),
       }),
@@ -120,20 +139,12 @@ async function addTask(title, deadline, description) {
       return false;
     }
 
-    await loadTasks();
-
-    if (typeof updateDashboard === 'function') {
-      updateDashboard();
-    }
-
-    if (typeof updateCalendar === 'function') {
-      updateCalendar();
-    }
+    EventCreation.activateGroup(groupId);
 
     return true;
   } catch (err) {
-    console.error('通信エラー:', err);
-    alert('通信に失敗しました。');
+    console.error('課題の追加に失敗しました:', err);
+    alert(err.message || '通信に失敗しました。');
     return false;
   }
 }
@@ -145,7 +156,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const closeModal = document.getElementById('closeModal');
   const saveTaskButton = document.getElementById('saveTask');
 
-  loadTasks();
+  window.EventListFilters.initialize('task', 'taskListFilters', loadTasks)
+    .then(loadTasks)
+    .catch((error) => {
+      console.error('課題一覧フィルターの初期化に失敗しました:', error);
+      renderTaskList([], 'グループ一覧を読み込めませんでした。');
+    });
 
   if (addTaskButton && taskModal) {
     addTaskButton.addEventListener('click', () => {

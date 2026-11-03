@@ -55,10 +55,15 @@ header {
 
 #addTaskButton,
 #addScheduleButton {
+    width: auto;
+    min-width: 0;
+    flex: 0 1 auto;
     border: none;
-    padding: clamp(10px, 1vw, 15px) clamp(18px, 1.5vw, 30px);
+    padding: clamp(8px, 1vw, 12px) clamp(10px, 1.2vw, 18px);
     border-radius: 12px;
     font-size: clamp(14px, 1vw, 18px);
+    line-height: 1.2;
+    white-space: nowrap;
     cursor: pointer;
     transition: .3s;
     color: white;
@@ -103,6 +108,107 @@ header {
     margin: clamp(15px, 2vw, 30px);
 }
 
+.dashboard[hidden],
+.overlay-panel[hidden] {
+    display: none;
+}
+
+.overlay-panel {
+    margin: clamp(15px, 2vw, 30px);
+    padding: clamp(15px, 2vw, 30px);
+    background: white;
+    border-radius: clamp(15px, 1.5vw, 25px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, .08);
+}
+
+.event-list-filters {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 12px 20px;
+    margin-bottom: 20px;
+    padding: 14px;
+    border: 1px solid #dfe1eb;
+    border-radius: 12px;
+    background: #f8f8fc;
+}
+
+.event-list-filters fieldset {
+    min-width: 0;
+    border: 0;
+}
+
+.event-list-filters legend {
+    margin-bottom: 8px;
+    font-weight: bold;
+}
+
+.event-list-groups {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 14px;
+}
+
+.event-list-group-option,
+.event-list-own-option,
+.event-list-sort-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.event-list-group-option,
+.event-list-own-option {
+    cursor: pointer;
+}
+
+.event-list-group-option input,
+.event-list-own-option input {
+    accent-color: #6C63FF;
+}
+
+.event-list-sort-label {
+    flex-wrap: wrap;
+    font-weight: bold;
+}
+
+.event-list-sort,
+.event-list-priority {
+    max-width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #cfd1dc;
+    border-radius: 8px;
+    background: white;
+    color: inherit;
+    font: inherit;
+}
+
+.event-list-group-name {
+    color: #626577;
+    font-size: .92em;
+}
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #EEF0FF;
+    padding-bottom: 10px;
+}
+
+.panel-header h2 {
+    color: #6C63FF;
+}
+
+.closePanel {
+    border: none;
+    background: none;
+    color: #666;
+    font-size: 28px;
+    cursor: pointer;
+}
+
 .dashboard-card {
     flex: 1;
     background: white;
@@ -140,6 +246,8 @@ header {
 
 /* カレンダー表示領域 */
 .calendar-section {
+    min-width: 0;
+    overflow: visible;
     background: white;
     border-radius: clamp(15px, 1.5vw, 25px);
     padding: clamp(15px, 2vw, 30px);
@@ -147,7 +255,10 @@ header {
 }
 
 #calendar {
-    min-height: clamp(500px, 65vh, 900px);
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    margin: 0 auto;
 }
 
 /* 課題・予定一覧表示領域 */
@@ -185,6 +296,16 @@ header {
 
 .schedule-card p {
     margin-top: 7px;
+}
+
+.event-audit-metadata {
+    margin-top: 10px;
+    color: #737585;
+    font-size: 12px;
+}
+
+.event-audit-metadata p {
+    margin: 3px 0 0;
 }
 
 .task-buttons {
@@ -286,6 +407,36 @@ header {
     border-radius: 10px;
     font-family: inherit;
     font-size: clamp(14px, 1vw, 18px);
+}
+
+#taskModal #taskTitle,
+#taskModal #taskGroupId,
+#scheduleModal #scheduleTitle {
+    width: min(100%, 42ch);
+}
+
+#taskModal #deadline,
+#taskModal #studyDate,
+#scheduleModal #scheduleDate {
+    width: min(100%, 18ch);
+}
+
+#taskModal #studyTime {
+    width: min(100%, 9ch);
+}
+
+#taskModal #priority {
+    width: min(100%, 14ch);
+}
+
+#scheduleModal #scheduleStartTime,
+#scheduleModal #scheduleEndTime {
+    width: min(100%, 12ch);
+}
+
+#scheduleModal #scheduleGroupId,
+#scheduleModal #scheduleMemo {
+    width: 100%;
 }
 
 #scheduleModal textarea {
@@ -395,10 +546,6 @@ header {
         font-size: 24px;
     }
 
-    #calendar {
-        min-height: 500px;
-    }
-
     #taskModal,
     #scheduleModal {
         width: 100%;
@@ -409,5 +556,57 @@ header {
         top: 65px;
         left: 10px;
         width: 220px;
+    }
+}
+
+@media screen and (max-width: 600px) {
+    header {
+        height: auto;
+        min-height: 70px;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 10px;
+    }
+
+    .logo {
+        min-width: 0;
+    }
+
+    .logo h1 {
+        font-size: clamp(16px, 5vw, 20px);
+        white-space: nowrap;
+    }
+
+    .header-right {
+        flex: 1 1 100%;
+        justify-content: flex-end;
+        gap: 6px;
+    }
+
+    #clock {
+        display: none;
+    }
+
+    #addTaskButton,
+    #addScheduleButton {
+        flex: 1 1 0;
+        width: auto;
+        max-width: 190px;
+        padding: 9px 8px;
+        font-size: clamp(12px, 3.5vw, 14px);
+        text-align: center;
+    }
+
+    .header-right .account-menu {
+        flex: 0 0 auto;
+    }
+
+    .event-list-filters {
+        grid-template-columns: 1fr;
+        align-items: start;
+    }
+
+    .event-list-sort-label {
+        justify-content: space-between;
     }
 }

@@ -1,42 +1,38 @@
-<<<<<<< HEAD
-
 import { Hono } from 'hono'
 import { Env } from '../types/hono'
-import { authCheck } from '../middleware/authMiddleware'
+import { authCheck, rejectDemoAccess } from '../middleware/authMiddleware'
 import { GroupController } from '../controllers/groupController'
+import { createGroupSchema } from '../validators/groupValidators'
+import { createEventSchema } from '../validators/eventValidators'
+import { GroupChatController } from '../controllers/groupChatController'
+import { requireJsonContentType } from '../middleware/requestSecurity'
+import { groupInviteCodeRateLimit } from '../middleware/rateLimit'
+import { apiWriteRateLimit } from '../middleware/rateLimit'
 
 const groupRoutes = new Hono<Env>()
 
-groupRoutes.use('*', authCheck)
+groupRoutes.get('/', authCheck, (c) => GroupController.list(c))
+groupRoutes.post('/', requireJsonContentType, authCheck, rejectDemoAccess, (c) => GroupController.create(c))
+groupRoutes.post('/join', groupInviteCodeRateLimit, requireJsonContentType, authCheck, rejectDemoAccess, (c) => GroupController.join(c))
+groupRoutes.get('/:id/messages', authCheck, (c) => GroupChatController.list(c))
+groupRoutes.post('/:id/messages', requireJsonContentType, authCheck, rejectDemoAccess, (c) => GroupChatController.create(c))
+groupRoutes.delete('/:id/leave', authCheck, rejectDemoAccess, (c) => GroupController.leave(c))
+groupRoutes.get('/:id', authCheck, rejectDemoAccess, (c) => GroupController.detail(c))
+groupRoutes.get('/:id/events', authCheck, rejectDemoAccess, (c) => GroupController.listEvents(c))
+groupRoutes.post('/:id/events', requireJsonContentType, authCheck, rejectDemoAccess, async (c) => {
+  const body = await c.req.json().catch(() => ({}))
+  const result = createEventSchema.safeParse(body)
 
-groupRoutes.get('/', (c) => GroupController.list(c))
-groupRoutes.post('/', (c) => GroupController.create(c))
-groupRoutes.post('/join', (c) => GroupController.join(c))
-groupRoutes.get('/:id', (c) => GroupController.detail(c))
-groupRoutes.get('/:id/events', (c) => GroupController.listEvents(c))
-groupRoutes.post('/:id/events', (c) => GroupController.createEvent(c))
-=======
-import { Hono } from 'hono'
-import { Env } from '../types/hono'
-import { authCheck } from '../middleware/authMiddleware'
-import { groupController } from '../controllers/groupController'
+  if (!result.success) {
+    const errors = result.error.issues.map((issue) => issue.message)
+    return c.json({ errors }, 400)
+  }
 
-const groupRoutes = new Hono<Env>()
-
-// すべてのグループ関連ルートに認証チェックを適用
-groupRoutes.use('*', authCheck)
-
-// GET /api/groups
-groupRoutes.get('/', groupController.getMyGroups)
-
-// POST /api/groups
-groupRoutes.post('/', groupController.createGroup)
-
-// POST /api/groups/join
-groupRoutes.post('/join', groupController.joinGroup)
-
-// GET /api/groups/:id/events
-groupRoutes.get('/:id/events', groupController.getGroupEvents)
->>>>>>> 9ebca3ad1e61de31e8b84d5d95b4dbc84e539d83
+  return GroupController.createEvent(c, result.data)
+})
+// 招待コード再発行（管理者のみ）
+groupRoutes.post('/:id/invite-code/rotate', requireJsonContentType, authCheck, rejectDemoAccess, (c) => GroupController.rotateInviteCode(c))
+// メンバー削除（管理者のみ）
+groupRoutes.delete('/:id/members/:memberId', authCheck, rejectDemoAccess, (c) => GroupController.removeMember(c, Number(c.req.param('memberId'))))
 
 export default groupRoutes

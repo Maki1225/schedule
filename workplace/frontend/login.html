@@ -6,14 +6,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ログイン - Schedule App</title>
   <link rel="stylesheet" href="css/auth.css">
+  <link rel="stylesheet" href="css/theme.css">
+  <script src="js/theme.js" defer></script>
 
   <!-- Googleログイン -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <<<<<<< HEAD <script>window.API_BASE_URL = "/";</script>
-    <script src="js/login.js" defer></script>
-    =======
-    <script src="js/google-auth.js" defer></script>
-    >>>>>>> 9268d46 (Google OAuth審査対策)
+  <script>window.API_BASE_URL = "/";</script>
+  <script src="js/login.js" defer></script>
 </head>
 
 <body>
@@ -22,15 +21,6 @@
     <div class="auth-box">
       <h1>Study Planner</h1>
       <h2>ログイン</h2>
-
-      <p class="login-description">
-        Googleアカウントを使用してログインしてください。
-      </p>
-
-      <div id="g_id_onload" data-client_id="1067955587484-jiuifljib05r35bfj25orgjucl2ctjbe.apps.googleusercontent.com"
-        data-callback="handleCredentialResponse">
-      </div>
-
       <div class="google-login">
         <!--
           g_id_onload / g_id_signin を削除し、
@@ -42,6 +32,10 @@
           Googleでログイン
         </button>
       </div>
+
+      <p class="login-description">
+        Googleアカウントを使用してログインしてください。
+      </p>
     </div>
   </div>
 

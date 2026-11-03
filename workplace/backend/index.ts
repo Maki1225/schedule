@@ -4,16 +4,18 @@ import { serve } from '@hono/node-server'
 import { secureHeaders } from 'hono/secure-headers'
 import { cors } from 'hono/cors'
 import { Env } from './src/types/hono'
+import { createOriginGuard, getAllowedOrigins, requireJsonContentType } from './src/middleware/requestSecurity'
+import { apiWriteRateLimit } from './src/middleware/rateLimit'
+import { bodySizeLimit } from './src/middleware/bodyLimit'
+import { getJwtSecret } from './src/controllers/authController';
 import eventRoutes from './src/routes/eventRoutes'
 import authRoutes from './src/routes/authRoutes'
 import groupRoutes from './src/routes/groupRoutes'
-<<<<<<< HEAD
-=======
-import userRoutes from './src/routes/userRoutes'
+import holidayRoutes from './src/routes/holidayRoutes'
+import demoRoutes from './src/routes/demoRoutes'
 
 // 起動時に JWT_SECRET の未設定・短すぎる値を検知して即失敗させる
 getJwtSecret()
->>>>>>> 9ebca3ad1e61de31e8b84d5d95b4dbc84e539d83
 
 const app = new Hono<Env>()
 
@@ -26,32 +28,48 @@ app.use(
 )
 
 // 2. CORS設定
+const allowedOrigins = getAllowedOrigins()
+
 app.use(
   '/api/*',
+  requireJsonContentType,
+  createOriginGuard(allowedOrigins),
   cors({
     origin: (origin) => {
-      const allowedOrigins = [
-        'http://127.0.0.1:5500',
-        'http://localhost:5500',
-        'http://127.0.0.1:5000',
-        'http://localhost:5000',
-        'https://schedule-sai.vercel.app',
-        'https://schedule-backend-navy.vercel.app',
-      ]
-      if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
-        return origin || '*'
+      if (origin && allowedOrigins.includes(origin)) {
+        return origin
       }
       return null
     },
     credentials: true,
-    allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization'],
-  })
+  }),
+  apiWriteRateLimit,
+  bodySizeLimit()
 )
 
 // 3. エラーハンドラ
+const ERROR_LOG_PREFIX = '★ サーバーエラー詳細'
+
 app.onError((err, c) => {
-  console.error('★ サーバーエラー詳細:', err)
+  const errorId = Math.random().toString(36).slice(-8)
+  console.error(`${ERROR_LOG_PREFIX} [errorId=${errorId}]:`, err)
+
+  // Vercel 環境でも NODE_ENV が設定されない場合があるため VERCEL 変数もチェック
+  const isProduction =
+    process.env.NODE_ENV === 'production' || process.env.VERCEL === '1'
+
+  if (isProduction) {
+    return c.json(
+      {
+        error: 'Internal Server Error',
+        errorId,
+      },
+      500
+    )
+  }
+
   return c.json(
     {
       error: 'サーバー内部エラーが発生しました',
@@ -65,13 +83,12 @@ app.onError((err, c) => {
 app.route('/api/events', eventRoutes)
 app.route('/api/auth', authRoutes)
 app.route('/api/groups', groupRoutes)
-<<<<<<< HEAD
-=======
-app.route('/api/users', userRoutes)
->>>>>>> 9ebca3ad1e61de31e8b84d5d95b4dbc84e539d83
+app.route('/api/calendar/holidays', holidayRoutes)
+app.route('/api/demo', demoRoutes)
+app.route('/api/users', authRoutes)
 
 // 5. ローカル開発用サーバー起動
-if (process.env.NODE_ENV !== 'production') {
+if (!process.env.VERCEL && process.env.NODE_ENV !== 'production') {
   const port = Number(process.env.PORT) || 5000
   serve(
     {
@@ -84,13 +101,5 @@ if (process.env.NODE_ENV !== 'production') {
     }
   )
 }
-
-// Vercel Serverless Functions 用 (fetch をそのままエクスポート)
-export const GET = app.fetch
-export const POST = app.fetch
-export const PUT = app.fetch
-export const DELETE = app.fetch
-export const PATCH = app.fetch
-export const OPTIONS = app.fetch
 
 export default app

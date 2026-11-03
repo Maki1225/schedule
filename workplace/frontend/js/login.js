@@ -1,52 +1,93 @@
 // APIベースURL（本番環境用）
-const API_BASE_URL = "http://schedule-backend-navy.vercel.app";
+const API_BASE_URL = "https://schedule-backend-navy.vercel.app"\;
 
 let codeClient;
+const selectAccount = new URLSearchParams(window.location.search).get('select_account') === 'true';
+const reauthorizeGoogle = new URLSearchParams(window.location.search).get('reauthorize_google') === 'true';
 
 // Google OAuth クライアントの初期化
 function initGoogleAuth() {
   if (typeof google === 'undefined' || !google.accounts) {
     console.warn('Google SDK がまだ読み込まれていません。再試行します...');
-    setTimeout(initGoogleAuth, 500); // 0.5秒後に再試行
+    setTimeout(initGoogleAuth, 500);
     return;
   }
 
   codeClient = google.accounts.oauth2.initCodeClient({
-    client_id: '1067955587484-jiuifljib05r35bfj25orgjucl2ctjbe.apps.googleusercontent.com', // login.html の data-client_id と同じもの
+    client_id: '1067955587484-appns84s4nb5t13797i53ur56e7ng49f.apps.googleusercontent.com',
+    select_account: selectAccount,
+    access_type: 'offline',
+    ...(reauthorizeGoogle ? { prompt: 'consent' } : {}),
     scope: [
       'openid',
       'email',
       'profile',
-      'https://www.googleapis.com/auth/classroom.course-work.readonly',
+      // 読み取り専用スコープのみを要求（管理権限は除外）
+      'https://www.googleapis.com/auth/calendar.events.readonly',
       'https://www.googleapis.com/auth/classroom.courses.readonly',
-      'https://www.googleapis.com/auth/userinfo.profile',
-      'https://www.googleapis.com/auth/calendar.app.created',
-      'https://www.googleapis.com/auth/calendar.events.freebusy',
-      'https://www.googleapis.com/auth/calendar.freebusy',
-      'https://www.googleapis.com/auth/classroom.announcements'
+      'https://www.googleapis.com/auth/classroom.coursework.readonly',
     ].join(' '),
+
+    // 👇 ポップアップモードに戻す
     ux_mode: 'popup',
-    callback: handleCodeResponse, // 認可コード交換後のコールバック
+
+    // 👇 コールバック関数をその場で直接定義（スコープエラーを防ぐためインライン記述）
+    callback: async (response) => {
+      if (response.error) {
+        console.error('Google 認可エラー:', response.error);
+        return;
+      }
+
+      console.log('1. Googleから認可コードを取得しました。バックエンドに送信します...');
+
+      try {
+        console.log('2. fetch を開始します:', `${API_BASE_URL}/api/auth/google`);
+
+        const res = await fetch(`${API_BASE_URL}/api/auth/google`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            code: response.code,
+          }),
+        });
+
+        console.log('3. バックエンドからレスポンスを受信しました。Status:', res.status);
+
+        if (!res.ok) {
+          const errorText = await res.text();
+          console.error(`バックエンド認証エラー (ステータス: ${res.status}):`, errorText);
+          alert(`ログイン処理に失敗しました (Status: ${res.status})`);
+          return;
+        }
+
+        const data = await res.json();
+        console.log('4. ログイン成功！ calendar.html へ遷移します。', data);
+        window.location.href = 'calendar.html';
+
+      } catch (err) {
+        console.error('通信エラー発生:', err);
+        alert('サーバーとの通信に失敗しました（コンソール詳細を確認してください）');
+      }
+    }
   });
 }
 
-// 1. 既にログイン済みならメイン画面（index.html）へ移動
+// ページ読み込み時
 document.addEventListener('DOMContentLoaded', async () => {
-  // ログイン状態をチェック
   if (typeof redirectIfAuthenticated === 'function') {
     redirectIfAuthenticated(API_BASE_URL);
   }
-
-  // Google OAuth クライアント初期化
   initGoogleAuth();
 });
 
-// ボタンクリック時に呼び出す関数（GSI ボタンの代わりに使用）
+// ボタンクリック時に呼び出す関数
 function loginWithGoogle() {
   if (codeClient) {
     codeClient.requestCode();
   } else {
-    // まだ初期化できていない場合は再試行してから実行
     initGoogleAuth();
     setTimeout(() => {
       if (codeClient) {
@@ -55,41 +96,5 @@ function loginWithGoogle() {
         alert('Google ログインの初期化中です。少々お待ちください。');
       }
     }, 1000);
-  }
-}
-
-// Google ポップアップ完了後のコールバック処理
-async function handleCodeResponse(response) {
-  if (response.error) {
-    console.error('Google 認可エラー:', response.error);
-    return;
-  }
-
-  try {
-    const res = await fetch(`${API_BASE_URL}/api/auth/google`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify({
-        code: response.code,
-      }),
-    });
-
-    // レスポンスが正常（200 OK）でない場合はテキストとしてログ出力
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error(`バックエンド認証エラー (ステータス: ${res.status}):`, errorText);
-      alert(`ログイン処理に失敗しました (Status: ${res.status})`);
-      return;
-    }
-
-    const data = await res.json();
-    window.location.href = 'index.html';
-
-  } catch (err) {
-    console.error('通信エラー:', err);
-    alert('サーバーとの通信に失敗しました');
   }
 }

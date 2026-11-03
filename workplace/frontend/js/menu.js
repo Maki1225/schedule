@@ -8,61 +8,67 @@ document.addEventListener("DOMContentLoaded", () => {
   const menuButton = document.getElementById("menuButton");
   const menuPanel = document.getElementById("menuPanel");
 
+  const shareButton = document.getElementById("shareMenuButton");
   const calendarButton = document.getElementById("calendarMenuButton");
   const taskButton = document.getElementById("taskMenuButton");
   const scheduleButton = document.getElementById("scheduleMenuButton");
-  const logoutButton = document.getElementById("logoutButton");
-
-  // 表示エリア（ビュー）要素の取得
-  const calendarView = document.getElementById("calendarView");
-  const taskView = document.getElementById("taskView");
-  const scheduleView = document.getElementById("scheduleView");
-  const shareView = document.getElementById("shareView");
+  const googleIntegrationsButton = document.getElementById("googleIntegrationsMenuButton");
+  const googleIntegrations = document.getElementById("googleIntegrations");
+  const taskPanel = document.getElementById("taskPanel");
+  const schedulePanel = document.getElementById("schedulePanel");
 
   // メニュー開閉
   if (menuButton && menuPanel) {
     menuButton.addEventListener("click", () => {
-      menuPanel.classList.toggle("active");
+      const isOpen = menuPanel.classList.toggle("active");
+      menuButton.setAttribute("aria-expanded", String(isOpen));
+      menuButton.setAttribute(
+        "aria-label",
+        isOpen ? "メニューを閉じる" : "メニューを開く"
+      );
     });
   }
 
-  // 画面切り替え
-  function switchView(targetView) {
-    // すべてのビューを非表示
-    const views = [
-      calendarView,
-      taskView,
-      scheduleView,
-      shareView
-    ];
-
-    views.forEach((view) => {
-      if (view) view.style.display = "none";
-    });
-
-    // 対象のビューのみ表示
-    if (targetView) {
-      targetView.style.display = "block";
+  function showDashboardPanel(targetPanel = null) {
+    if (taskPanel) {
+      taskPanel.hidden = targetPanel !== taskPanel;
     }
-
+    if (schedulePanel) {
+      schedulePanel.hidden = targetPanel !== schedulePanel;
+    }
+    if (googleIntegrations) {
+      googleIntegrations.hidden = targetPanel !== googleIntegrations;
+    }
     // メニューパネルを閉じる
     if (menuPanel) {
       menuPanel.classList.remove("active");
     }
+    if (menuButton) {
+      menuButton.setAttribute("aria-expanded", "false");
+      menuButton.setAttribute("aria-label", "メニューを開く");
+    }
+    if (targetPanel !== taskPanel && typeof updateDashboard === "function") {
+      updateDashboard();
+    }
+  }
+
+  if (shareButton) {
+    shareButton.addEventListener("click", () => {
+      if (window.DemoMode?.active) window.DemoMode.prepareNavigation();
+      window.location.href = "group.html";
+    });
   }
 
   // カレンダー表示
   if (calendarButton) {
     calendarButton.addEventListener("click", () => {
-      switchView(calendarView);
+      showDashboardPanel();
 
-      if (window.calendar) {
-        window.calendar.updateSize();
-      }
-
-      window.scrollTo({
-        top: 0,
-        behavior: "smooth"
+      if (typeof updateCalendar === "function") updateCalendar();
+      const calendarSection = document.querySelector(".calendar-section");
+      requestAnimationFrame(() => {
+        if (window.calendar) window.calendar.updateSize();
+        calendarSection?.scrollIntoView({ behavior: "smooth", block: "start" });
       });
     });
   }
@@ -70,255 +76,121 @@ document.addEventListener("DOMContentLoaded", () => {
   // 課題一覧表示
   if (taskButton) {
     taskButton.addEventListener("click", () => {
-      switchView(taskView);
-      displayTasks();
+      showDashboardPanel(taskPanel);
+      if (typeof loadTasks === "function") {
+        loadTasks();
+      }
     });
   }
 
   // 予定一覧表示
   if (scheduleButton) {
     scheduleButton.addEventListener("click", () => {
-      switchView(scheduleView);
+      showDashboardPanel(schedulePanel);
       displaySchedules();
     });
   }
 
-  // ログアウト
-  if (logoutButton) {
-    logoutButton.addEventListener("click", async () => {
-      const result = confirm("ログアウトしますか？");
-      if (!result) return;
-
-// ログアウト
-  if (logoutButton) {
-
-      logoutButton.addEventListener("click", async () => {
-          const result = confirm("ログアウトしますか？");
-          if (!result) return;
-
-          try {
-              const res = await fetch(
-                  `${window.API_BASE_URL}/api/auth/logout`,
-                  {
-                      method: "POST",
-                      credentials: "include"
-                  }
-              );
-              if (res.ok) {
-                  alert("ログアウトしました");
-                  window.location.href = "login.html";
-              } else {
-                  alert("ログアウトに失敗しました");
-              }
-          } catch (error) {
-              console.error("ログアウトエラー:", error);
-              alert("サーバーとの通信に失敗しました");
-          }
-      });
-  }
-
-            if (!result) {
-                return;
-            }
-
-            try {
-
-                const res = await fetch("/api/auth/logout", {
-                    method: "POST",
-                    credentials: "include"
-                });
-
-                if (!res.ok) {
-                    alert("ログアウトに失敗しました");
-                    return;
-                }
-
-                // ログイン画面へ移動
-                window.location.replace("login.html");
-
-            } catch (error) {
-
-                console.error("ログアウトエラー:", error);
-
-                alert("サーバーとの通信に失敗しました");
-
-            }
-
-        });
-
-    }
->>>>>>> b6e3473 (Merge pull request #51 from hackathon-SAI/profile)
-
-        if (res.ok) {
-          alert("ログアウトしました");
-          window.location.href = "login.html";
-        } else {
-          alert("ログアウトに失敗しました");
-        }
-      } catch (error) {
-        console.error("ログアウトエラー:", error);
-        alert("サーバーとの通信に失敗しました");
-      }
+  if (googleIntegrationsButton && googleIntegrations) {
+    googleIntegrationsButton.addEventListener("click", () => {
+      showDashboardPanel(googleIntegrations);
+      googleIntegrations.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   }
-});
 
-// =======================================
-// 課題一覧表示
-// =======================================
-async function displayTasks() {
-  const taskList = document.getElementById("taskList");
-  if (!taskList) return;
+  document.querySelectorAll(".closePanel").forEach((closeButton) => {
+    closeButton.addEventListener("click", () => showDashboardPanel());
+  });
 
-  const groupId = localStorage.getItem("selectedGroupId");
-  taskList.replaceChildren();
+})
 
-  if (!groupId) {
-    taskList.textContent = "先にグループを作成するか、参加してください。";
-    return;
-  }
-
-  try {
-    const res = await fetch(
-      `${window.API_BASE_URL}/api/events?groupId=${encodeURIComponent(groupId)}`,
-      { credentials: "include" }
-    );
-
-    if (res.status === 401) {
-      window.location.href = "login.html";
-      return;
-    }
-
-    if (!res.ok) {
-      throw new Error("課題の取得に失敗しました。");
-    }
-
-    const data = await res.json();
-    const tasks = (data.events || []).filter(event =>
-      (event.description || "").startsWith("[課題]")
-    );
-
-    if (tasks.length === 0) {
-      taskList.textContent = "課題はありません。";
-      return;
-    }
-
-    tasks.forEach(task => {
-      const card = document.createElement("div");
-      card.className = "task-card";
-
-      const title = document.createElement("h3");
-      title.textContent = task.title || "";
-
-      const deadline = document.createElement("p");
-      deadline.textContent = `📅 提出期限：${task.end_time
-        ? new Date(task.end_time).toLocaleString("ja-JP")
-        : "未設定"
-        }`;
-
-      card.append(title, deadline);
-      taskList.appendChild(card);
-    });
-  } catch (error) {
-    console.error("課題一覧の取得エラー:", error);
-    taskList.textContent = "課題一覧を取得できませんでした。";
-  }
-}
-
-// =======================================
-// 予定一覧表示
-// =======================================
 async function displaySchedules() {
   const scheduleList = document.getElementById("scheduleList");
   if (!scheduleList) return;
 
-  const groupId = localStorage.getItem("selectedGroupId");
-  scheduleList.replaceChildren();
-
-  if (!groupId) {
-    scheduleList.textContent = "先にグループを作成するか、参加してください。";
-    return;
-  }
-
   try {
-    const res = await fetch(
-      `${window.API_BASE_URL}/api/events?groupId=${encodeURIComponent(groupId)}`,
-      { credentials: "include" }
-    );
+    const schedules = await window.EventListFilters.getEvents("schedule");
 
-    if (res.status === 401) {
-      window.location.href = "login.html";
+    scheduleList.replaceChildren();
+
+    if (schedules.length === 0) {
+      const message = document.createElement("p");
+      message.textContent = window.EventListFilters.selectedGroupCount("schedule") === 0
+        ? "表示するグループを選択してください。"
+        : "予定はありません。";
+      scheduleList.appendChild(message);
       return;
     }
 
-    if (!res.ok) {
-      throw new Error("予定の取得に失敗しました。");
-    }
-
-    const data = await res.json();
-    const events = (data.events || []).filter(event =>
-      (event.description || "").startsWith("[予定]")
-    );
-
-    if (events.length === 0) {
-      scheduleList.textContent = "予定はありません。";
-      return;
-    }
-
-    events.forEach(event => {
+    schedules.forEach((schedule) => {
       const card = document.createElement("div");
       card.className = "schedule-card";
 
       const title = document.createElement("h3");
-      title.textContent = event.title || "";
+      title.textContent = schedule.title || "";
+      card.appendChild(title);
 
-      const date = document.createElement("p");
-      date.textContent = `📅 日付：${event.start_time
-        ? new Date(event.start_time).toLocaleDateString("ja-JP", {
-          timeZone: "Asia/Tokyo"
-        })
-        : "未設定"
-        }`;
+      const group = document.createElement("p");
+      group.className = "event-list-group-name";
+      group.textContent = `👥 ${schedule.group_name || "グループ不明"}`;
+      card.appendChild(group);
 
-      const time = document.createElement("p");
-      if (event.start_time && event.end_time) {
-        const start = new Date(event.start_time).toLocaleTimeString(
-          "ja-JP",
-          {
+      if (schedule.start_time) {
+        const date = new Date(schedule.start_time);
+        const dateText = document.createElement("p");
+        dateText.textContent = `📅 ${date.toLocaleDateString("ja-JP", {
+          timeZone: "Asia/Tokyo",
+        })}`;
+        card.appendChild(dateText);
+
+        if (schedule.end_time) {
+          const end = new Date(schedule.end_time);
+          const timeText = document.createElement("p");
+          timeText.textContent = `🕐 ${date.toLocaleTimeString("ja-JP", {
             hour: "2-digit",
             minute: "2-digit",
-            timeZone: "Asia/Tokyo"
-          }
-        );
-
-        const end = new Date(event.end_time).toLocaleTimeString(
-          "ja-JP",
-          {
+            timeZone: "Asia/Tokyo",
+          })} ～ ${end.toLocaleTimeString("ja-JP", {
             hour: "2-digit",
             minute: "2-digit",
-            timeZone: "Asia/Tokyo"
-          }
-        );
-
-        time.textContent = `🕐 ${start} ～ ${end}`;
+            timeZone: "Asia/Tokyo",
+          })}`;
+          card.appendChild(timeText);
+        }
       }
 
-      card.append(title, date, time);
+      const description = (schedule.description || "").replace(/^\[予定\]\s*/, "");
+      if (description) {
+        const memo = document.createElement("p");
+        memo.textContent = `📝 ${description}`;
+        card.appendChild(memo);
+      }
+
+      window.EventActions.addControls(card, schedule);
       scheduleList.appendChild(card);
     });
   } catch (error) {
-    console.error("予定一覧の取得エラー:", error);
-    scheduleList.textContent = "予定一覧を取得できませんでした。";
+    console.error("予定一覧の取得に失敗しました:", error);
+    scheduleList.replaceChildren();
+    const message = document.createElement("p");
+    message.textContent = "予定一覧を読み込めませんでした。";
+    scheduleList.appendChild(message);
   }
 }
 
-// =======================================
-// HTMLエスケープ関数
-// =======================================
-function escapeHtmlMenu(text) {
-  if (!text) return "";
-
-  const div = document.createElement("div");
-  div.textContent = text;
-  return div.innerHTML;
-}
+document.addEventListener("DOMContentLoaded", () => {
+  window.EventListFilters.initialize(
+    "schedule",
+    "scheduleListFilters",
+    displaySchedules
+  ).catch((error) => {
+    console.error("予定一覧フィルターの初期化に失敗しました:", error);
+    const scheduleList = document.getElementById("scheduleList");
+    if (scheduleList) {
+      scheduleList.replaceChildren();
+      const message = document.createElement("p");
+      message.textContent = "グループ一覧を読み込めませんでした。";
+      scheduleList.appendChild(message);
+    }
+  });
+});

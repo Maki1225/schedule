@@ -21,16 +21,15 @@ function initializeApp() {
 
   // 30秒ごとに、ほかのメンバーが追加した予定・課題を確認
   setInterval(() => {
-    if (localStorage.getItem("selectedGroupId")) {
-      updateDashboard();
+    updateDashboard();
 
-      if (typeof loadTasks === "function") {
-        loadTasks();
-      }
+    const taskPanel = document.getElementById("taskPanel");
+    if (!taskPanel?.hidden && typeof loadTasks === "function") {
+      loadTasks();
+    }
 
-      if (typeof updateCalendar === "function") {
-        updateCalendar();
-      }
+    if (localStorage.getItem("selectedGroupId") && typeof updateCalendar === "function") {
+      updateCalendar();
     }
   }, 30000);
 }
@@ -58,12 +57,11 @@ function updateClock() {
 async function updateDashboard() {
   const groupId = localStorage.getItem("selectedGroupId");
 
-  const taskCountEl = document.getElementById("taskCount");
   const todayTaskCountEl = document.getElementById("todayTaskCount");
   const highPriorityCountEl = document.getElementById("highPriorityCount");
+  await updateAllTaskCount();
 
   if (!groupId) {
-    if (taskCountEl) taskCountEl.textContent = "0";
     if (todayTaskCountEl) todayTaskCountEl.textContent = "0";
     if (highPriorityCountEl) highPriorityCountEl.textContent = "0";
     return;
@@ -91,17 +89,16 @@ async function updateDashboard() {
     const data = await res.json();
     const events = Array.isArray(data.events) ? data.events : [];
 
-    // 全課題・予定の件数
-    if (taskCountEl) {
-      taskCountEl.textContent = events.length;
-    }
+    const tasks = events.filter((event) =>
+      (event.description || "").startsWith("[課題]")
+    );
 
-    // 今日が期限の課題・予定
+    // 今日が期限の課題
     const today = new Date().toLocaleDateString("sv-SE", {
       timeZone: "Asia/Tokyo",
     });
 
-    const todayEvents = events.filter((event) => {
+    const todayEvents = tasks.filter((event) => {
       if (!event.end_time) return false;
 
       const deadline = new Date(event.end_time).toLocaleDateString("sv-SE", {
@@ -116,7 +113,7 @@ async function updateDashboard() {
     }
 
     // 優先度「高」の件数
-    const highPriority = events.filter(
+    const highPriority = tasks.filter(
       (event) =>
         event.priority === "高" ||
         (event.description &&
@@ -128,5 +125,19 @@ async function updateDashboard() {
     }
   } catch (err) {
     console.error("ダッシュボード更新エラー:", err);
+  }
+}
+
+async function updateAllTaskCount() {
+  const taskPanel = document.getElementById("taskPanel");
+  if (taskPanel && !taskPanel.hidden) return;
+
+  try {
+    const tasks = await window.EventListFilters.getAllEvents("task");
+    if (taskPanel && !taskPanel.hidden) return;
+    const taskCount = document.getElementById("taskCount");
+    if (taskCount) taskCount.textContent = String(tasks.length);
+  } catch (error) {
+    console.error("全グループの課題数を取得できませんでした:", error);
   }
 }
